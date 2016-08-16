@@ -84,5 +84,6 @@ function render() {
 }
 
 render();
+
 window.mathjs = mathjs;
 window.camera = camera;
