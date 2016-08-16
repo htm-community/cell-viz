@@ -1,3 +1,5 @@
+This is an attempt at recreating an old illustration.  See it live at https://numenta.github.io/cell-viz/ 
+
 Usage
 -----
 
