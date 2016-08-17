@@ -51,6 +51,9 @@ window.drawCells = function (layers /* mathjs sparse matrix */) {
     var initialXOffset = (OFFSET_FACTOR * m) / 2;
     var initialYOffset = (OFFSET_FACTOR * n) / 2;
     var initialZOffset = (OFFSET_FACTOR * layers.length) / 2;
+
+    group = new THREE.Group();
+    
     for (var k = 0; k < layers.length; k++) {
         for (var i = 0; i < n; i++) {
             for (var j = 0; j < m; j++) {
@@ -63,10 +66,15 @@ window.drawCells = function (layers /* mathjs sparse matrix */) {
 
                 var material = new THREE.MeshLambertMaterial({ color: COLOR_PALLETE[layers[k].subset(mathjs.index(j, i))] });
                 var cube = new THREE.Mesh(geometry, material);
-                scene.add(cube);
+
+                group.add(cube);
             }
         }
     }
+
+    scene.add(group);
+
+    return group
 };
 
 // create a point light

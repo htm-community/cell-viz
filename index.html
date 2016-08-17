@@ -23,15 +23,13 @@
                     cells[i].subset(mathjs.index(idx[0], idx[1]), mathjs.pickRandom([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2]));
                 }
             });
-		}
+        }
 
-        drawCells(cells);
+        grid = drawCells(cells);
 
-        camera.position.z = 20;
-        camera.position.y = -30;
-        camera.position.x = 10;
-
-        camera.rotateOnAxis(new THREE.Vector3(1, 0, 1), 45*mathjs.PI/180);
+        grid.rotation.z = -45*mathjs.PI/180;
+        grid.rotation.x = -60*mathjs.PI/180;
+        camera.position.z = 50;
 
         </script>
     </body>
