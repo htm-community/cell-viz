@@ -26,13 +26,15 @@ var OBJLoader = require('three-obj-loader');
 var TrackballControls = require('three-trackballcontrols');
 var camera, controls, scene, renderer;
 var light;
-var COLOR_PALLETE = {
-    0:0xffffff, // white
-    1:0xffff00, // yellow
-    2:0xff0000, // red
-};
 
-function init(layers /* array of mathjs sparse matrices */) {
+function init(layers /* array of mathjs sparse matrices */, 
+              geometry /* three.js geometry constructor */,
+              spacing /* int */,
+              colors /* obj */) {
+
+    if (typeof geometry == 'undefined') {
+        geometry = new THREE.BoxGeometry(1, 1, 1);
+    }
 
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
     camera.position.z = 50;
@@ -52,39 +54,45 @@ function init(layers /* array of mathjs sparse matrices */) {
     scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2( 0xffffff, 0.002 );
 
-    var geometry = new THREE.BoxGeometry(1, 1, 1);
-    
-    var OFFSET_FACTOR = 1.25;
     var dims = layers[0].size(); // all layers should have same dims.  Infer from first.
     var m = dims[0];
     var n = dims[1];
-    var initialXOffset = (OFFSET_FACTOR * m) / 2;
-    var initialYOffset = (OFFSET_FACTOR * n) / 2;
-    var initialZOffset = (OFFSET_FACTOR * layers.length) / 2;
-
-    group = new THREE.Group();
+    if (typeof spacing == 'undefined'){
+        spacing = 1.25;
+    }
+    var initialXOffset = (spacing * m) / 2;
+    var initialYOffset = (spacing * n) / 2;
+    var initialZOffset = (spacing * layers.length) / 2;
+    if (typeof colors == 'undefined') {
+        colors = {
+            0:0xffffff, // white
+            1:0xffff00, // yellow
+            2:0xff0000, // red
+        };
+    }
+    grid = new THREE.Group();
     
     for (var k = 0; k < layers.length; k++) {
         for (var i = 0; i < n; i++) {
             for (var j = 0; j < m; j++) {
-                var material = new THREE.MeshLambertMaterial({ color: COLOR_PALLETE[layers[k].subset(mathjs.index(j, i))] });
+                var material = new THREE.MeshLambertMaterial({ color: colors[layers[k].subset(mathjs.index(j, i))] });
                 var cube = new THREE.Mesh(geometry, material);
                 
-                cube.position.x = OFFSET_FACTOR * i - initialYOffset;
-                cube.position.y = OFFSET_FACTOR * j - initialXOffset;
-                cube.position.z = OFFSET_FACTOR * k - initialZOffset;
+                cube.position.x = spacing * i - initialYOffset;
+                cube.position.y = spacing * j - initialXOffset;
+                cube.position.z = spacing * k - initialZOffset;
                 cube.updateMatrix();
                 cube.matrixAutoUpdate = false;
                 
-                group.add(cube);
+                grid.add(cube);
             }
         }
     }
     
-    group.rotation.z = -45*mathjs.PI/180;
-    group.rotation.x = -60*mathjs.PI/180;
+    grid.rotation.z = -45*mathjs.PI/180;
+    grid.rotation.x = -60*mathjs.PI/180;
     
-    scene.add(group);
+    scene.add(grid);
     
     light = new THREE.PointLight(0xFFFFFF);
     
@@ -101,6 +109,13 @@ function init(layers /* array of mathjs sparse matrices */) {
     window.addEventListener( 'resize', onWindowResize, false );
     
     render();
+
+    this.camera = camera;
+    this.renderer = renderer;   
+    this.scene = scene;
+    this.controls = controls;
+    this.light = light;
+    this.animate = animate;
 }
 
 function onWindowResize() {
@@ -132,7 +147,6 @@ function Cells(l, m, n) {
 }
 
 window.drawCells = init;
-window.animate = animate;
 window.Cells = Cells;
 window.mathjs = mathjs;
 window.THREE = THREE;
