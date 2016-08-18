@@ -25,9 +25,15 @@
             });
         }
 
-        var icosahedron = new THREE.IcosahedronGeometry(1);
-        var grid = new drawCells(cells, icosahedron, 2);
-        grid.animate();
+        var loader = new ColladaLoader();
+        loader.options.centerGeometry = true;
+        loader.load( 'model.dae', function ( collada ) {
+            var grid = new drawCells(cells, collada.dae.geometries.ID6.mesh.geometry3js, 2.25);
+            grid.animate();
+            grid.camera.position.z = 70;
+        });
+
+        
         </script>
     </body>
 </html>

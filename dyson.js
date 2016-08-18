@@ -151,3 +151,6 @@ window.Cells = Cells;
 window.mathjs = mathjs;
 window.THREE = THREE;
 window.OBJLoader = OBJLoader;
+
+var ColladaLoader = require('three-collada-loader');
+window.ColladaLoader = ColladaLoader;

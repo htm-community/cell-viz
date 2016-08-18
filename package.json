@@ -12,6 +12,7 @@
   "dependencies": {
     "math": "0.0.3",
     "mathjs": "^3.4.1",
+    "three-collada-loader": "0.0.1",
     "three-obj-loader": "^1.0.2",
     "three-trackballcontrols": "0.0.5",
     "three.js": "^0.77.1",
