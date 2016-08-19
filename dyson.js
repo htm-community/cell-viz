@@ -52,7 +52,7 @@ function init(layers /* array of mathjs sparse matrices */,
     controls.addEventListener( 'change', render );
 
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2( 0xeeeeee, 0.002 );
+    scene.fog = new THREE.FogExp2( 0x800080, 0.002 );
 
     var dims = layers[0].size(); // all layers should have same dims.  Infer from first.
     var m = dims[0];
