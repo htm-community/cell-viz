@@ -27,7 +27,7 @@ var TrackballControls = require('three-trackballcontrols');
 var camera, controls, scene, renderer;
 var light;
 
-function init(layers /* array of mathjs sparse matrices */, 
+function init(layers /* array of mathjs sparse matrices */,
               geometry /* three.js geometry constructor */,
               spacing /* int */,
               colors /* obj */) {
@@ -52,7 +52,7 @@ function init(layers /* array of mathjs sparse matrices */,
     controls.addEventListener( 'change', render );
 
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2( 0xffffff, 0.002 );
+    scene.fog = new THREE.FogExp2( 0xeeeeee, 0.002 );
 
     var dims = layers[0].size(); // all layers should have same dims.  Infer from first.
     var m = dims[0];
@@ -71,47 +71,47 @@ function init(layers /* array of mathjs sparse matrices */,
         };
     }
     grid = new THREE.Group();
-    
+
     for (var k = 0; k < layers.length; k++) {
         for (var i = 0; i < n; i++) {
             for (var j = 0; j < m; j++) {
                 var material = new THREE.MeshLambertMaterial({ color: colors[layers[k].subset(mathjs.index(j, i))] });
                 var cube = new THREE.Mesh(geometry, material);
-                
+
                 cube.position.x = spacing * i - initialYOffset;
                 cube.position.y = spacing * j - initialXOffset;
                 cube.position.z = spacing * k - initialZOffset;
                 cube.updateMatrix();
                 cube.matrixAutoUpdate = false;
-                
+
                 grid.add(cube);
             }
         }
     }
-    
+
     grid.rotation.z = -45*mathjs.PI/180;
     grid.rotation.x = -60*mathjs.PI/180;
-    
+
     scene.add(grid);
-    
+
     light = new THREE.PointLight(0xFFFFFF);
-    
+
     scene.add(light);
-    
+
     renderer = new THREE.WebGLRenderer( { antialias: false } );
-    
+
     renderer.setClearColor( scene.fog.color );
     renderer.setPixelRatio( window.devicePixelRatio );
     renderer.setSize( window.innerWidth, window.innerHeight );
-    
+
     document.body.appendChild(renderer.domElement);
-    
+
     window.addEventListener( 'resize', onWindowResize, false );
-    
+
     render();
 
     this.camera = camera;
-    this.renderer = renderer;   
+    this.renderer = renderer;
     this.scene = scene;
     this.controls = controls;
     this.light = light;
