@@ -30,13 +30,21 @@ var light;
 function init(layers /* array of mathjs sparse matrices */,
               geometry /* three.js geometry constructor */,
               spacing /* int */,
-              colors /* obj */) {
+              colors /* obj */,
+              elementId /* optional string */) {
 
     if (typeof geometry == 'undefined') {
         geometry = new THREE.BoxGeometry(1, 1, 1);
     }
 
-    camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
+    var innerWidth = window.innerWidth;
+    var innerHeight = window.innerHeight;
+    if (elementId) {
+        innerWidth = $('#' + elementId).innerWidth();
+        innerHeight = $('#' + elementId).innerHeight();
+    }
+
+    camera = new THREE.PerspectiveCamera( 60, innerWidth / innerHeight, 1, 1000 );
     camera.position.z = 50;
 
     controls = new TrackballControls( camera );
@@ -67,7 +75,7 @@ function init(layers /* array of mathjs sparse matrices */,
         colors = {
             0:0xffffff, // white
             1:0xffff00, // yellow
-            2:0xff0000, // red
+            2:0xff0000  // red
         };
     }
     grid = new THREE.Group();
@@ -102,11 +110,21 @@ function init(layers /* array of mathjs sparse matrices */,
 
     renderer.setClearColor( scene.fog.color );
     renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize( innerWidth, innerHeight );
 
-    document.body.appendChild(renderer.domElement);
+    if (elementId) {
+        document.getElementById(elementId).appendChild(renderer.domElement);
+    } else {
+        document.body.appendChild(renderer.domElement);
+    }
 
-    window.addEventListener( 'resize', onWindowResize, false );
+    window.addEventListener('resize', function() {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize( innerWidth, innerHeight );
+        controls.handleResize();
+        render();
+    }, false );
 
     render();
 
@@ -118,13 +136,6 @@ function init(layers /* array of mathjs sparse matrices */,
     this.animate = animate;
 }
 
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    controls.handleResize();
-    render();
-}
 
 function animate() {
     requestAnimationFrame( animate );
@@ -139,7 +150,7 @@ function render() {
 }
 
 function Cells(l, m, n) {
-    var cells = new Array();
+    var cells = [];
     for (var i = 0; i < l; i++) {
         cells.push(mathjs.zeros(m, n, 'sparse'));
     }
