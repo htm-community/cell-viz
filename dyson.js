@@ -26,6 +26,12 @@ var OBJLoader = require('three-obj-loader');
 var TrackballControls = require('three-trackballcontrols');
 var ColladaLoader = require('three-collada-loader');
 
+/**
+ *
+ * @param cells (HtmCells) initial cells to render
+ * @param opts (Object) Can contain 'geometry', 'spacing', 'colors', 'elementId'
+ * @constructor
+ */
 function HtmCellVisualization(cells, opts) {
     if (!opts) opts = {};
 
@@ -108,38 +114,23 @@ HtmCellVisualization.prototype._setupScene = function() {
 
     this.scene = new THREE.Scene();
     scene = this.scene;
-    scene.fog = new THREE.FogExp2( 0xEEEEEE, 0.002 );
+    scene.fog = new THREE.FogExp2(0xEEEEEE, 0.002);
 
     this.light = new THREE.PointLight(0xFFFFFF);
     scene.add(this.light);
 
     this.renderer = new THREE.WebGLRenderer({antialias: false});
     renderer = this.renderer;
-    renderer.setClearColor( scene.fog.color );
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( this.width, this.height );
+    renderer.setClearColor(scene.fog.color);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(this.width, this.height);
 };
 
-HtmCellVisualization.prototype._applyMeshCells = function() {
-    var colors = this.colors;
-    var cells = this.cells;
-    var meshCells = this.meshCells;
-    var x = cells.getX();
-    var y = cells.getY();
-    var z = cells.getZ();
-    var cube;
-    for (var cy = 0; cy < y; cy++) {
-        for (var cz = 0; cz < z; cz++) {
-            for (var cx = 0; cx < x; cx++) {
-                cube = meshCells[cy][cz][cx];
-                cube.material = new THREE.MeshLambertMaterial(
-                    {color: colors[cells.getCellValue(cx, cy, cz)]}
-                );
-            }
-        }
-    }
-};
-
+/*
+ * Creates all the geometries within the grid. These are only created once and
+ * updated as cells change over time, so this function should only be called
+ * one time.
+ */
 HtmCellVisualization.prototype._createMeshCells = function() {
     var scene = this.scene;
     var colors = this.colors;
@@ -191,6 +182,30 @@ HtmCellVisualization.prototype._createMeshCells = function() {
 };
 
 /*
+ * Updates the mesh cell colors based on the cells, which might have changed.
+ * This function should only be called when the cells change.
+ */
+HtmCellVisualization.prototype._applyMeshCells = function() {
+    var colors = this.colors;
+    var cells = this.cells;
+    var meshCells = this.meshCells;
+    var x = cells.getX();
+    var y = cells.getY();
+    var z = cells.getZ();
+    var cube;
+    for (var cy = 0; cy < y; cy++) {
+        for (var cz = 0; cz < z; cz++) {
+            for (var cx = 0; cx < x; cx++) {
+                cube = meshCells[cy][cz][cx];
+                cube.material.color = new THREE.Color(
+                    colors[cells.getCellValue(cx, cy, cz)]
+                );
+            }
+        }
+    }
+};
+
+/**
  * Called once to render the canvas into the DOM with the initial cell data.
  */
 HtmCellVisualization.prototype.render = function() {
@@ -247,6 +262,14 @@ HtmCellVisualization.prototype.redraw = function() {
     this._applyMeshCells();
 };
 
+/**
+ * This interface is used to update cell data within the HtmCellVisualization.
+ * Once created, use it to update cell values.
+ * @param x (int) x dimension
+ * @param y (int) y dimension
+ * @param z (int) z dimension
+ * @constructor
+ */
 function HtmCells(x, y, z) {
     this.xdim = x;
     this.ydim = y;
@@ -270,11 +293,25 @@ HtmCells.prototype.getZ = function() {
     return this.zdim;
 };
 
+/**
+ * Gets the value of the cell given the coordinates.
+ * @param x (int) x coordinate
+ * @param y (int) y coordinate
+ * @param z (int) z coordinate
+ * @returns {*} whatever value was in the cell
+ */
 HtmCells.prototype.getCellValue = function(x, y, z) {
     // TODO: raise error if cell coordinates are invalid.
     return this.cells[y].subset(mathjs.index(x, z));
 };
 
+/**
+ * Allows user to update a cell's value.
+ * @param x (int) x coordinate
+ * @param y (int) y coordinate
+ * @param z (int) z coordinate
+ * @param value {*} Whatever value you want the cell to have.
+ */
 HtmCells.prototype.update = function(x, y, z, value) {
     // TODO: raise error if cell coordinates are invalid.
     this.cells[y].subset(mathjs.index(x, z), value);
