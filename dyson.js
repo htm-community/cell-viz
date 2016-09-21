@@ -24,144 +24,262 @@ var mathjs = require('mathjs');
 var THREE = require('three');
 var OBJLoader = require('three-obj-loader');
 var TrackballControls = require('three-trackballcontrols');
-var camera, controls, scene, renderer;
-var light;
+var ColladaLoader = require('three-collada-loader');
 
-function init(layers /* array of mathjs sparse matrices */,
-              geometry /* three.js geometry constructor */,
-              spacing /* int */,
-              colors /* obj */,
-              elementId /* optional string */) {
+function HtmCellVisualization(cells, opts) {
+    if (!opts) opts = {};
 
-    if (typeof geometry == 'undefined') {
-        geometry = new THREE.BoxGeometry(1, 1, 1);
+    this.cells = cells;
+    this.meshCells = [];
+    this.geometry = opts.geometry;
+    this.spacing = opts.spacing;
+    this.colors = opts.colors;
+    this.width = undefined;
+    this.height = undefined;
+    this.$container = undefined;
+    this.camera = undefined;
+    this.controls = undefined;
+    this.light = undefined;
+    this.scene = undefined;
+    this.renderer = undefined;
+    this.grid = undefined;
+    this.loader = new ColladaLoader();
+
+    this.loader.options.centerGeometry = true;
+
+    // Use a default geometry.
+    if (! this.geometry) {
+        this.geometry = new THREE.BoxGeometry(1, 1, 1);
     }
-
-    var innerWidth = window.innerWidth;
-    var innerHeight = window.innerHeight;
-    if (elementId) {
-        innerWidth = $('#' + elementId).innerWidth();
-        innerHeight = $('#' + elementId).innerHeight();
+    // Use a default spacing.
+    if (! this.spacing) {
+        this.spacing = 1.25;
     }
-
-    camera = new THREE.PerspectiveCamera( 60, innerWidth / innerHeight, 1, 1000 );
-    camera.position.z = 50;
-
-    controls = new TrackballControls( camera );
-
-    controls.rotateSpeed = 1.0;
-    controls.zoomSpeed = 1.2;
-    controls.panSpeed = 0.8;
-    controls.noZoom = false;
-    controls.noPan = false;
-    controls.staticMoving = true;
-    controls.dynamicDampingFactor = 0.3;
-    controls.keys = [ 65, 83, 68 ];
-    controls.addEventListener( 'change', render );
-
-    scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2( 0xeeeeee, 0.002 );
-
-    var dims = layers[0].size(); // all layers should have same dims.  Infer from first.
-    var m = dims[0];
-    var n = dims[1];
-    if (typeof spacing == 'undefined'){
-        spacing = 1.25;
-    }
-    var initialXOffset = (spacing * m) / 2;
-    var initialYOffset = (spacing * n) / 2;
-    var initialZOffset = (spacing * layers.length) / 2;
-    if (typeof colors == 'undefined') {
-        colors = {
-            0:0xffffff, // white
-            1:0xffff00, // yellow
-            2:0xff0000  // red
+    // Use default colors;
+    if (! this.colors) {
+        this.colors = {
+            0: 0xffffff, // white
+            1: 0xffff00, // yellow
+            2: 0xff0000  // red
         };
     }
-    grid = new THREE.Group();
 
-    for (var k = 0; k < layers.length; k++) {
-        for (var i = 0; i < n; i++) {
-            for (var j = 0; j < m; j++) {
-                var material = new THREE.MeshLambertMaterial({ color: colors[layers[k].subset(mathjs.index(j, i))] });
-                var cube = new THREE.Mesh(geometry, material);
+    this._setupContainer(opts.elementId);
+    this._setupCamera();
+    this._setupControls();
+    this._setupScene();
+}
 
-                cube.position.x = spacing * i - initialYOffset;
-                cube.position.y = spacing * j - initialXOffset;
-                cube.position.z = spacing * k - initialZOffset;
-                cube.updateMatrix();
-                cube.matrixAutoUpdate = false;
+HtmCellVisualization.prototype._setupContainer = function(elementId) {
+    if (elementId) {
+        this.$container = $('#' + elementId);
+        this.width = this.$container.innerWidth();
+        this.height = this.$container.innerHeight();
+    } else {
+        this.$container = $('body');
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+    }
+};
 
-                grid.add(cube);
+HtmCellVisualization.prototype._setupCamera = function() {
+    // Set up camera position.
+    this.camera = new THREE.PerspectiveCamera(
+        60, this.width / this.height, 1, 1000
+    );
+    this.camera.position.z = 50;
+};
+
+HtmCellVisualization.prototype._setupControls = function() {
+    this.controls = new TrackballControls(this.camera);
+    this.controls.rotateSpeed = 1.0;
+    this.controls.zoomSpeed = 1.2;
+    this.controls.panSpeed = 0.8;
+    this.controls.noZoom = false;
+    this.controls.noPan = false;
+    this.controls.staticMoving = true;
+    this.controls.dynamicDampingFactor = 0.3;
+    this.controls.keys = [ 65, 83, 68 ];
+};
+
+HtmCellVisualization.prototype._setupScene = function() {
+    var scene;
+    var renderer;
+
+    this.scene = new THREE.Scene();
+    scene = this.scene;
+    scene.fog = new THREE.FogExp2( 0xEEEEEE, 0.002 );
+
+    this.light = new THREE.PointLight(0xFFFFFF);
+    scene.add(this.light);
+
+    this.renderer = new THREE.WebGLRenderer({antialias: false});
+    renderer = this.renderer;
+    renderer.setClearColor( scene.fog.color );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( this.width, this.height );
+};
+
+HtmCellVisualization.prototype._applyMeshCells = function() {
+    var colors = this.colors;
+    var cells = this.cells;
+    var meshCells = this.meshCells;
+    var x = cells.getX();
+    var y = cells.getY();
+    var z = cells.getZ();
+    var cube;
+    for (var cy = 0; cy < y; cy++) {
+        for (var cz = 0; cz < z; cz++) {
+            for (var cx = 0; cx < x; cx++) {
+                cube = meshCells[cy][cz][cx];
+                cube.material = new THREE.MeshLambertMaterial(
+                    {color: colors[cells.getCellValue(cx, cy, cz)]}
+                );
             }
         }
     }
+};
 
-    grid.rotation.z = -45*mathjs.PI/180;
-    grid.rotation.x = -60*mathjs.PI/180;
+HtmCellVisualization.prototype._createMeshCells = function() {
+    var scene = this.scene;
+    var colors = this.colors;
+    var cells = this.cells;
+    var meshCells = this.meshCells;
+    var spacing = this.spacing;
+    var x = cells.getX();
+    var y = cells.getY();
+    var z = cells.getZ();
+    var initialXOffset = (spacing * x) / 2;
+    var initialYOffset = (spacing * y) / 2;
+    var initialZOffset = (spacing * z) / 2;
+    var material, cube, zdim, xdim;
 
-    scene.add(grid);
+    if (! this.grid) {
+        this.grid = new THREE.Group();
+        for (var cy = 0; cy < y; cy++) {
+            zdim = [];
+            for (var cz = 0; cz < z; cz++) {
+                xdim = [];
+                for (var cx = 0; cx < x; cx++) {
+                    material = new THREE.MeshLambertMaterial(
+                        {color: colors[cells.getCellValue(cx, cy, cz)]}
+                    );
+                    cube = new THREE.Mesh(this.geometry, material);
+                    cube.position.x = spacing * cz - initialYOffset;
+                    cube.position.y = spacing * cx - initialXOffset;
+                    cube.position.z = spacing * cy - initialZOffset;
+                    cube.updateMatrix();
+                    cube.matrixAutoUpdate = false;
+                    this.grid.add(cube);
+                    xdim.push(cube);
+                }
+                zdim.push(xdim);
+            }
+            meshCells.push(zdim);
+        }
+    }
 
-    light = new THREE.PointLight(0xFFFFFF);
+    //this.grid.rotation.z = -45 * mathjs.PI / 180;
+    //this.grid.rotation.x = -60 * mathjs.PI / 180;
 
-    scene.add(light);
+    //this.grid.rotation.x = -60 * mathjs.PI / 180;
+    this.grid.position.x = -30;
+    //this.grid.position.y = -100;
+    //this.grid.position.z = -100;
+
+    scene.add(this.grid);
+};
+
+/*
+ * Called once to render the canvas into the DOM with the initial cell data.
+ */
+HtmCellVisualization.prototype.render = function() {
+    var me = this;
+    var renderer = this.renderer;
+    var scene = this.scene;
+    var controls = this.controls;
+    var camera = this.camera;
+    var light = this.light;
+    var w = this.width;
+    var h = this.height;
+
+    this._createMeshCells();
 
     renderer = new THREE.WebGLRenderer( { antialias: false } );
 
     renderer.setClearColor( scene.fog.color );
     renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( innerWidth, innerHeight );
+    renderer.setSize(w, h);
 
-    if (elementId) {
-        document.getElementById(elementId).appendChild(renderer.domElement);
-    } else {
-        document.body.appendChild(renderer.domElement);
+    function innerRender() {
+        light.position.x = camera.position.x;
+        light.position.y = camera.position.y;
+        light.position.z = camera.position.z;
+        renderer.render(scene, camera);
     }
+
+    this.controls.addEventListener('change', innerRender);
 
     window.addEventListener('resize', function() {
-        camera.aspect = innerWidth / innerHeight;
+        w = me.width = me.$container.innerWidth();
+        h = me.height = me.$container.innerHeight();
+        camera.aspect = w / h;
         camera.updateProjectionMatrix();
-        renderer.setSize( innerWidth, innerHeight );
+        renderer.setSize(w, h);
         controls.handleResize();
-        render();
+        innerRender();
     }, false );
 
-    render();
+    this.$container.append(renderer.domElement);
 
-    this.camera = camera;
-    this.renderer = renderer;
-    this.scene = scene;
-    this.controls = controls;
-    this.light = light;
-    this.animate = animate;
-}
-
-
-function animate() {
-    requestAnimationFrame( animate );
-    controls.update();
-}
-
-function render() {
-    light.position.x = camera.position.x;
-    light.position.y = camera.position.y;
-    light.position.z = camera.position.z;
-    renderer.render( scene, camera );
-}
-
-function Cells(l, m, n) {
-    var cells = [];
-    for (var i = 0; i < l; i++) {
-        cells.push(mathjs.zeros(m, n, 'sparse'));
+    function animate() {
+        requestAnimationFrame(animate);
+        me.controls.update();
+        innerRender();
     }
-    return cells;
+
+    setTimeout(animate, 0);
+
+    camera.position.z = 20;
+};
+
+HtmCellVisualization.prototype.redraw = function() {
+    this._applyMeshCells();
+};
+
+function HtmCells(x, y, z) {
+    this.xdim = x;
+    this.ydim = y;
+    this.zdim = z;
+    this.cells = [];
+    // Create initially empty matrices.
+    for (var cy = 0; cy < y; cy++) {
+        this.cells.push(mathjs.zeros(x, z, 'sparse'));
+    }
 }
 
-window.drawCells = init;
-window.Cells = Cells;
-window.mathjs = mathjs;
-window.THREE = THREE;
-window.OBJLoader = OBJLoader;
+HtmCells.prototype.getX = function() {
+    return this.xdim;
+};
 
-var ColladaLoader = require('three-collada-loader');
-window.ColladaLoader = ColladaLoader;
+HtmCells.prototype.getY = function() {
+    return this.ydim;
+};
+
+HtmCells.prototype.getZ = function() {
+    return this.zdim;
+};
+
+HtmCells.prototype.getCellValue = function(x, y, z) {
+    // TODO: raise error if cell coordinates are invalid.
+    return this.cells[y].subset(mathjs.index(x, z));
+};
+
+HtmCells.prototype.update = function(x, y, z, value) {
+    // TODO: raise error if cell coordinates are invalid.
+    this.cells[y].subset(mathjs.index(x, z), value);
+};
+
+
+window.HtmCellVisualization = HtmCellVisualization;
+window.HtmCells = HtmCells;
