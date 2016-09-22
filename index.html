@@ -9,31 +9,80 @@
         </style>
     </head>
     <body>
+
+        <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
         <script src="dyson-bundle.js"></script>
-        <script>    
-        var cells = new Cells(
-            4, // layers 
-            20, // rows
-            20  // columns
-        );
+        <script>
 
-        for (var i=0; i<cells.length; i++) {
-            cells[i].forEach(function(val, idx, M) {
-                if (mathjs.random() > 0.90 /* 90% sparsity */ ) {
-                    cells[i].subset(mathjs.index(idx[0], idx[1]), mathjs.pickRandom([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2]));
+            $(function() {
+
+                // The problem space.
+                var numColumns = 2048;
+                var cellsPerColumn = 4;
+                var lengthLargestSide = 64;
+
+                // Translate into cell dimensions.
+                // x = left->right
+                // y = down->up
+                // z = near->far
+                var x = numColumns / lengthLargestSide;
+                var y = cellsPerColumn;
+                var z = lengthLargestSide;
+
+                // The Cells interface is how to update the visualization inside the canvas.
+                var cells = new HtmCells(x, y, z);
+
+                // The HtmCellVisualization object handles all interactions with the DOM.
+                var cellviz = new HtmCellVisualization(
+                    cells
+                );
+
+                // Renders the canvas with empty cells into the DOM and canvas.
+                cellviz.render({
+                    position: {
+                        x: -40,
+                        y: 40
+                    },
+                    rotation: {
+                        x: -1.2
+                    },
+                    camera: {
+                        z: 40
+                    }
+                });
+
+                // Update cells with random colors every so often.
+                setInterval(function() {
+                    console.log('redrawing new cells...');
+                    // Throw in a bunch of random colored cells.
+                    colorCellsRandomly(cells);
+                    // This call actually updates the mesh representation within
+                    // the drawing. It must be called to show the updated cell
+                    // representation.
+                    cellviz.redraw();
+                }, 2000);
+
+                function colorCellsRandomly(myCells) {
+                    for (var cx = 0; cx < x; cx++) {
+                        for (var cy = 0; cy < y; cy++) {
+                            for (var cz = 0; cz < z; cz++) {
+                                myCells.update(
+                                    cx, cy, cz,
+                                    getRandomIntInclusive(0, 2)
+                                );
+                            }
+                        }
+                    }
                 }
+
+                function getRandomIntInclusive(min, max) {
+                    min = Math.ceil(min);
+                    max = Math.floor(max);
+                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                }
+
             });
-        }
 
-        var loader = new ColladaLoader();
-        loader.options.centerGeometry = true;
-        loader.load( 'model.dae', function ( collada ) {
-            var grid = new drawCells(cells, collada.dae.geometries.ID6.mesh.geometry3js, 2.25);
-            grid.animate();
-            grid.camera.position.z = 70;
-        });
-
-        
         </script>
     </body>
 </html>
