@@ -131,7 +131,7 @@ HtmCellVisualization.prototype._setupScene = function() {
  * updated as cells change over time, so this function should only be called
  * one time.
  */
-HtmCellVisualization.prototype._createMeshCells = function() {
+HtmCellVisualization.prototype._createMeshCells = function(position, rotation) {
     var scene = this.scene;
     var colors = this.colors;
     var cells = this.cells;
@@ -148,35 +148,38 @@ HtmCellVisualization.prototype._createMeshCells = function() {
     if (! this.grid) {
         this.grid = new THREE.Group();
         for (var cy = 0; cy < y; cy++) {
-            zdim = [];
-            for (var cz = 0; cz < z; cz++) {
-                xdim = [];
-                for (var cx = 0; cx < x; cx++) {
+            xdim = [];
+            for (var cx = 0; cx < x; cx++) {
+                zdim = [];
+                for (var cz = 0; cz < z; cz++) {
                     material = new THREE.MeshLambertMaterial(
                         {color: colors[cells.getCellValue(cx, cy, cz)]}
                     );
                     cube = new THREE.Mesh(this.geometry, material);
-                    cube.position.x = spacing * cz - initialYOffset;
-                    cube.position.y = spacing * cx - initialXOffset;
-                    cube.position.z = spacing * cy - initialZOffset;
+                    cube.position.y = spacing * cy - initialYOffset;
+                    cube.position.x = spacing * cx - initialXOffset;
+                    cube.position.z = spacing * cz - initialZOffset;
                     cube.updateMatrix();
                     cube.matrixAutoUpdate = false;
                     this.grid.add(cube);
-                    xdim.push(cube);
+                    zdim.push(cube);
                 }
-                zdim.push(xdim);
+                xdim.push(zdim);
             }
-            meshCells.push(zdim);
+            meshCells.push(xdim);
         }
     }
 
-    //this.grid.rotation.z = -45 * mathjs.PI / 180;
-    //this.grid.rotation.x = -60 * mathjs.PI / 180;
-
-    //this.grid.rotation.x = -60 * mathjs.PI / 180;
-    this.grid.position.x = -30;
-    //this.grid.position.y = -100;
-    //this.grid.position.z = -100;
+    if (position) {
+        if (position.x) this.grid.position.x = position.x;
+        if (position.y) this.grid.position.y = position.y;
+        if (position.z) this.grid.position.z = position.z;
+    }
+    if (rotation) {
+        if (rotation.x) this.grid.rotation.x = rotation.x;
+        if (rotation.y) this.grid.rotation.y = rotation.y;
+        if (rotation.z) this.grid.rotation.z = rotation.z;
+    }
 
     scene.add(this.grid);
 };
@@ -194,9 +197,9 @@ HtmCellVisualization.prototype._applyMeshCells = function() {
     var z = cells.getZ();
     var cube;
     for (var cy = 0; cy < y; cy++) {
-        for (var cz = 0; cz < z; cz++) {
-            for (var cx = 0; cx < x; cx++) {
-                cube = meshCells[cy][cz][cx];
+        for (var cx = 0; cx < x; cx++) {
+            for (var cz = 0; cz < z; cz++) {
+                cube = meshCells[cy][cx][cz];
                 cube.material.color = new THREE.Color(
                     colors[cells.getCellValue(cx, cy, cz)]
                 );
@@ -208,7 +211,8 @@ HtmCellVisualization.prototype._applyMeshCells = function() {
 /**
  * Called once to render the canvas into the DOM with the initial cell data.
  */
-HtmCellVisualization.prototype.render = function() {
+HtmCellVisualization.prototype.render = function(opts) {
+    if (!opts) opts = {};
     var me = this;
     var renderer = this.renderer;
     var scene = this.scene;
@@ -218,7 +222,7 @@ HtmCellVisualization.prototype.render = function() {
     var w = this.width;
     var h = this.height;
 
-    this._createMeshCells();
+    this._createMeshCells(opts.position, opts.rotation);
 
     renderer = new THREE.WebGLRenderer( { antialias: false } );
 
@@ -255,7 +259,11 @@ HtmCellVisualization.prototype.render = function() {
 
     setTimeout(animate, 0);
 
-    camera.position.z = 20;
+    if (opts.camera) {
+        if (opts.camera.x) camera.position.x = opts.camera.x;
+        if (opts.camera.y) camera.position.y = opts.camera.y;
+        if (opts.camera.z) camera.position.z = opts.camera.z;
+    }
 };
 
 HtmCellVisualization.prototype.redraw = function() {
