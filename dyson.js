@@ -131,7 +131,7 @@ HtmCellVisualization.prototype._setupScene = function() {
  * updated as cells change over time, so this function should only be called
  * one time.
  */
-HtmCellVisualization.prototype._createMeshCells = function() {
+HtmCellVisualization.prototype._createMeshCells = function(position, rotation) {
     var scene = this.scene;
     var colors = this.colors;
     var cells = this.cells;
@@ -170,13 +170,16 @@ HtmCellVisualization.prototype._createMeshCells = function() {
         }
     }
 
-    //this.grid.rotation.z = -45 * mathjs.PI / 180;
-    //this.grid.rotation.x = -60 * mathjs.PI / 180;
-
-    //this.grid.rotation.x = -60 * mathjs.PI / 180;
-    this.grid.position.x = -30;
-    //this.grid.position.y = -100;
-    //this.grid.position.z = -100;
+    if (position) {
+        if (position.x) this.grid.position.x = position.x;
+        if (position.y) this.grid.position.y = position.y;
+        if (position.z) this.grid.position.z = position.z;
+    }
+    if (rotation) {
+        if (rotation.x) this.grid.rotation.x = rotation.x;
+        if (rotation.y) this.grid.rotation.y = rotation.y;
+        if (rotation.z) this.grid.rotation.z = rotation.z;
+    }
 
     scene.add(this.grid);
 };
@@ -208,7 +211,8 @@ HtmCellVisualization.prototype._applyMeshCells = function() {
 /**
  * Called once to render the canvas into the DOM with the initial cell data.
  */
-HtmCellVisualization.prototype.render = function() {
+HtmCellVisualization.prototype.render = function(opts) {
+    if (!opts) opts = {};
     var me = this;
     var renderer = this.renderer;
     var scene = this.scene;
@@ -218,7 +222,7 @@ HtmCellVisualization.prototype.render = function() {
     var w = this.width;
     var h = this.height;
 
-    this._createMeshCells();
+    this._createMeshCells(opts.position, opts.rotation);
 
     renderer = new THREE.WebGLRenderer( { antialias: false } );
 
@@ -255,7 +259,11 @@ HtmCellVisualization.prototype.render = function() {
 
     setTimeout(animate, 0);
 
-    camera.position.z = 20;
+    if (opts.camera) {
+        if (opts.camera.x) camera.position.x = opts.camera.x;
+        if (opts.camera.y) camera.position.y = opts.camera.y;
+        if (opts.camera.z) camera.position.z = opts.camera.z;
+    }
 };
 
 HtmCellVisualization.prototype.redraw = function() {

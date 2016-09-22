@@ -38,7 +38,18 @@
                 );
 
                 // Renders the canvas with empty cells into the DOM and canvas.
-                cellviz.render();
+                cellviz.render({
+                    position: {
+                        x: -40,
+                        y: 40
+                    },
+                    rotation: {
+                        x: -1.2
+                    },
+                    camera: {
+                        z: 40
+                    }
+                });
 
                 // Update cells with random colors every so often.
                 setInterval(function() {
