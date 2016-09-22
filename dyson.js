@@ -325,6 +325,19 @@ HtmCells.prototype.update = function(x, y, z, value) {
     this.cells[y].subset(mathjs.index(x, z), value);
 };
 
+/**
+ * Updates all cell values to given value.
+ * @param value {*} Whatever value you want the cells to have.
+ */
+HtmCells.prototype.updateAll = function(value) {
+    for (var cx = 0; cx < this.xdim; cx++) {
+        for (var cy = 0; cy < this.ydim; cy++) {
+            for (var cz = 0; cz < this.zdim; cz++) {
+                this.cells[cy].subset(mathjs.index(cx, cz), value);
+            }
+        }
+    }
+};
 
 window.HtmCellVisualization = HtmCellVisualization;
 window.HtmCells = HtmCells;
