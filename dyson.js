@@ -26,6 +26,20 @@ var OBJLoader = require('three-obj-loader');
 var TrackballControls = require('three-trackballcontrols');
 var ColladaLoader = require('three-collada-loader');
 
+
+// I don't want to restrict what can be stored inside an HtmCell, so this will
+// keep it generic for now (client knows how to load / unload the cell value).
+function htmCellValueToColor(cellValue, colors) {
+    var color = colors[cellValue];
+    if (color == undefined) {
+        throw new Error(
+            'Cannot convert cell value "' + cellValue + '" into a color.' +
+            'Known colors are: \n' + JSON.stringify(colors, null, 2)
+        );
+    }
+    return color;
+}
+
 /**
  *
  * @param cells (HtmCells) initial cells to render
@@ -143,7 +157,7 @@ HtmCellVisualization.prototype._createMeshCells = function(position, rotation) {
     var initialXOffset = (spacing * x) / 2;
     var initialYOffset = (spacing * y) / 2;
     var initialZOffset = (spacing * z) / 2;
-    var material, cube, zdim, xdim;
+    var xdim, zdim, cube, material, cellValue;
 
     if (! this.grid) {
         this.grid = new THREE.Group();
@@ -152,9 +166,10 @@ HtmCellVisualization.prototype._createMeshCells = function(position, rotation) {
             for (var cx = 0; cx < x; cx++) {
                 zdim = [];
                 for (var cz = 0; cz < z; cz++) {
-                    material = new THREE.MeshLambertMaterial(
-                        {color: colors[cells.getCellValue(cx, cy, cz)]}
-                    );
+                    cellValue = cells.getCellValue(cx, cy, cz);
+                    material = new THREE.MeshLambertMaterial({
+                        color: htmCellValueToColor(cellValue, colors)
+                    });
                     cube = new THREE.Mesh(this.geometry, material);
                     cube.position.y = spacing * cy - initialYOffset;
                     cube.position.x = spacing * cx - initialXOffset;
@@ -192,16 +207,14 @@ HtmCellVisualization.prototype._applyMeshCells = function() {
     var colors = this.colors;
     var cells = this.cells;
     var meshCells = this.meshCells;
-    var x = cells.getX();
-    var y = cells.getY();
-    var z = cells.getZ();
-    var cube;
-    for (var cy = 0; cy < y; cy++) {
-        for (var cx = 0; cx < x; cx++) {
-            for (var cz = 0; cz < z; cz++) {
+    var cube, cellValue;
+    for (var cy = 0; cy < cells.getY(); cy++) {
+        for (var cx = 0; cx < cells.getX(); cx++) {
+            for (var cz = 0; cz < cells.getZ(); cz++) {
                 cube = meshCells[cy][cx][cz];
+                cellValue = cells.getCellValue(cx, cy, cz);
                 cube.material.color = new THREE.Color(
-                    colors[cells.getCellValue(cx, cy, cz)]
+                    htmCellValueToColor(cellValue, colors)
                 );
             }
         }
