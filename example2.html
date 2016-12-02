@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=utf-8>
+        <title>Cell Regions</title>
+        <style>
+            body { margin: 0; }
+            canvas { width: 100%; height: 100% }
+        </style>
+    </head>
+    <body>
+
+        <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
+        <script src="dyson-bundle.js"></script>
+        <script>
+
+            $(function() {
+
+                // The problem space.
+                var numColumns = 2048;
+                var cellsPerColumn = 1;
+                var lengthLargestSide = 32;
+
+                // Translate into cell dimensions.
+                // x = left->right
+                // y = down->up
+                // z = near->far
+                var x = numColumns / lengthLargestSide;
+                var y = cellsPerColumn;
+                var z = lengthLargestSide;
+
+                // The Cells interface is how to update the visualization inside the canvas.
+                var inputCells = new HtmCells(x, y, z);
+                var spCells = new HtmCells(x, y, z);
+
+                // The HtmCellVisualization object handles all interactions with the DOM.
+                var cellviz = new SpToInputVisualization(
+                    inputCells, spCells
+                );
+
+                // Renders the canvas with empty cells into the DOM and canvas.
+                cellviz.render({
+                    position: {
+                        //x: -40,
+                        //y: 10
+                    },
+                    rotation: {
+                        x: 90 * Math.PI / 180
+                        //y: 45 * Math.PI / 180
+                    },
+                    camera: {
+                        z: 45
+                    }
+                });
+
+                // Update cells with random colors every so often.
+                setInterval(function() {
+                    console.log('redrawing new cells...');
+                    // Throw in a bunch of random colored cells.
+                    colorCellsRandomly(inputCells);
+                    colorCellsRandomly(spCells);
+                    // This call actually updates the mesh representation within
+                    // the drawing. It must be called to show the updated cell
+                    // representation.
+                    cellviz.redraw();
+                }, 2000);
+
+                function colorCellsRandomly(myCells) {
+                    for (var cx = 0; cx < x; cx++) {
+                        for (var cy = 0; cy < y; cy++) {
+                            for (var cz = 0; cz < z; cz++) {
+                                myCells.update(
+                                    cx, cy, cz,
+                                    getRandomIntInclusive(0, 2)
+                                );
+                            }
+                        }
+                    }
+                }
+
+                function getRandomIntInclusive(min, max) {
+                    min = Math.ceil(min);
+                    max = Math.floor(max);
+                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                }
+
+            });
+
+        </script>
+    </body>
+</html>
