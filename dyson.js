@@ -64,6 +64,8 @@ function BaseGridVisualization(opts) {
     this.scene = undefined;
     this.renderer = undefined;
     this.loader = new ColladaLoader();
+    this.projector = new THREE.Projector();
+    this.targets = [];
 
     this.loader.options.centerGeometry = true;
 
@@ -88,7 +90,6 @@ function BaseGridVisualization(opts) {
     this._setupCamera();
     this._setupControls();
     this._setupScene();
-    this.meshCells = [];
 }
 
 BaseGridVisualization.prototype._setupContainer = function(elementId) {
@@ -144,13 +145,13 @@ BaseGridVisualization.prototype._setupScene = function() {
 /*
  * Creates all the geometries within the grid. These are only created once and
  * updated as cells change over time, so this function should only be called
- * one time.
+ * one time for each grid of cells created in the scene.
  */
-BaseGridVisualization.prototype._createMeshCells = function(position, rotation, grid) {
+BaseGridVisualization.prototype._createMeshCells =
+function(cells, position, rotation, grid, type) {
     var scene = this.scene;
     var colors = this.colors;
-    var cells = this.cells;
-    var meshCells = this.meshCells;
+    var meshCells = [];
     var spacing = this.spacing;
     var x = cells.getX();
     var y = cells.getY();
@@ -159,6 +160,8 @@ BaseGridVisualization.prototype._createMeshCells = function(position, rotation, 
     var initialYOffset = (spacing * y) / 2;
     var initialZOffset = (spacing * z) / 2;
     var xdim, zdim, cube, material, cellValue;
+
+    if (! type) type = 'default';
 
     for (var cy = 0; cy < y; cy++) {
         xdim = [];
@@ -175,8 +178,13 @@ BaseGridVisualization.prototype._createMeshCells = function(position, rotation, 
                 cube.position.z = spacing * cz - initialZOffset;
                 cube.updateMatrix();
                 cube.matrixAutoUpdate = false;
+                cube._cellData = {
+                    type: type, x: cx, y: cy, z: cz
+                };
                 grid.add(cube);
                 zdim.push(cube);
+                // Keep track of cubes in the grid so they can be clickable.
+                this.targets.push(cube);
             }
             xdim.push(zdim);
         }
@@ -195,16 +203,15 @@ BaseGridVisualization.prototype._createMeshCells = function(position, rotation, 
     }
 
     scene.add(grid);
+    return meshCells;
 };
 
 /*
  * Updates the mesh cell colors based on the cells, which might have changed.
  * This function should only be called when the cells change.
  */
-BaseGridVisualization.prototype._applyMeshCells = function() {
+BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells) {
     var colors = this.colors;
-    var cells = this.cells;
-    var meshCells = this.meshCells;
     var cube, cellValue;
     for (var cy = 0; cy < cells.getY(); cy++) {
         for (var cx = 0; cx < cells.getX(); cx++) {
@@ -219,6 +226,14 @@ BaseGridVisualization.prototype._applyMeshCells = function() {
     }
 };
 
+/*
+ * Gets clickable cubes in the grids. See example2.html.
+ */
+BaseGridVisualization.prototype.getTargets = function() {
+    return this.targets;
+};
+
+
 /*******************************************************************************
  * Simple single layer block of cells for TM
  *******************************************************************************/
@@ -232,6 +247,7 @@ BaseGridVisualization.prototype._applyMeshCells = function() {
 function SingleLayerVisualization(cells, opts) {
     if (!opts) opts = {};
     this.cells = cells;
+    this.meshCells = [];
     BaseGridVisualization.call(this, opts);
 }
 
@@ -253,7 +269,9 @@ SingleLayerVisualization.prototype.render = function(opts) {
     var h = this.height;
     var grid = new THREE.Group();
 
-    this._createMeshCells(opts.position, opts.rotation, grid);
+    this.meshCells = this._createMeshCells(
+        this.cells, opts.position, opts.rotation, grid
+    );
 
     renderer = new THREE.WebGLRenderer( { antialias: false } );
 
@@ -298,7 +316,7 @@ SingleLayerVisualization.prototype.render = function(opts) {
 };
 
 SingleLayerVisualization.prototype.redraw = function() {
-    this._applyMeshCells();
+    this._applyMeshCells(this.cells, this.meshCells);
 };
 
 /*******************************************************************************
@@ -317,8 +335,8 @@ function SpToInputVisualization(inputCells, spColumns, opts) {
     if (!opts) opts = {};
     this.inputCells = inputCells;
     this.spColumns = spColumns;
-    this.cells = inputCells;
-    this.meshCells = [];
+    this.inputMeshCells = [];
+    this.spMeshCells = [];
     BaseGridVisualization.call(this, opts);
 }
 SpToInputVisualization.prototype = Object.create(BaseGridVisualization.prototype);
@@ -338,9 +356,27 @@ SpToInputVisualization.prototype.render = function(opts) {
     var light = this.light;
     var w = this.width;
     var h = this.height;
-    var grid = new THREE.Group();
+    var inputGrid = new THREE.Group();
+    var spGrid = new THREE.Group();
+    var position = opts.position;
 
-    this._createMeshCells(opts.position, opts.rotation, grid);
+    if (! position) position = {};
+    if (! position.x) position.x = 0;
+    if (! position.y) position.y = 0;
+    if (! position.z) position.z = 0;
+
+    var inputPosition = {
+        x: position.x,
+        y: position.y,
+        z: position.z + 10
+    };
+
+    this.spMeshCells = this._createMeshCells(
+        this.spColumns, position, opts.rotation, spGrid, 'spColumns'
+    );
+    this.inputMeshCells = this._createMeshCells(
+        this.inputCells, inputPosition, opts.rotation, inputGrid, 'inputCells'
+    );
 
     renderer = new THREE.WebGLRenderer( { antialias: false } );
 
@@ -385,8 +421,13 @@ SpToInputVisualization.prototype.render = function(opts) {
 };
 
 SpToInputVisualization.prototype.redraw = function() {
-    this._applyMeshCells();
+    this._applyMeshCells(this.inputCells, this.inputMeshCells);
+    this._applyMeshCells(this.spColumns, this.spMeshCells);
 };
+
+/*******************************************************************************
+ * HTM Cells
+ *******************************************************************************/
 
 /**
  * This interface is used to update cell data within the SpToInputVisualization.
@@ -457,6 +498,11 @@ HtmCells.prototype.updateAll = function(value) {
     }
 };
 
+/*******************************************************************************
+ * Exports.
+ *******************************************************************************/
+
 window.SingleLayerVisualization = SingleLayerVisualization;
 window.SpToInputVisualization = SpToInputVisualization;
 window.HtmCells = HtmCells;
+window.THREE = THREE;

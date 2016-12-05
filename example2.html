@@ -16,9 +16,9 @@
 
             $(function() {
 
-                // The problem space.
+                // The SP space.
                 var numColumns = 2048;
-                var cellsPerColumn = 1;
+                var cellsPerColumn = 4;
                 var lengthLargestSide = 32;
 
                 // Translate into cell dimensions.
@@ -29,13 +29,25 @@
                 var y = cellsPerColumn;
                 var z = lengthLargestSide;
 
+                var colors = {
+                    0: 0xFFFFFF, // white for inactive cells
+                    1: 0xFFFF00, // yellow for active cells
+                    2: 0xFF0000, // red for predictive cells
+                    3: 0xFFAC33, // orange for active & predictive cells
+                    4: 0x6699FF, // cyan for correctly predicted cells from last step
+                    5: 0x00FF00  // green for input bits
+                };
+
+
                 // The Cells interface is how to update the visualization inside the canvas.
-                var inputCells = new HtmCells(x, y, z);
                 var spCells = new HtmCells(x, y, z);
+
+                // The Input space
+                var inputCells = new HtmCells(32, 1, 32);
 
                 // The HtmCellVisualization object handles all interactions with the DOM.
                 var cellviz = new SpToInputVisualization(
-                    inputCells, spCells
+                    inputCells, spCells, { colors: colors }
                 );
 
                 // Renders the canvas with empty cells into the DOM and canvas.
@@ -45,44 +57,49 @@
                         //y: 10
                     },
                     rotation: {
-                        x: 90 * Math.PI / 180
-                        //y: 45 * Math.PI / 180
+                        x: 90 * Math.PI / 180,
+                        // y: 45 * Math.PI / 180,
+                        // z: 90 * Math.PI / 180
                     },
                     camera: {
                         z: 45
                     }
                 });
 
-                // Update cells with random colors every so often.
-                setInterval(function() {
-                    console.log('redrawing new cells...');
-                    // Throw in a bunch of random colored cells.
-                    colorCellsRandomly(inputCells);
-                    colorCellsRandomly(spCells);
-                    // This call actually updates the mesh representation within
-                    // the drawing. It must be called to show the updated cell
-                    // representation.
+                function cellClicked(cellData) {
+                    var cells;
+                    console.log(cellData);
+                    if (cellData.type == 'inputCells') cells = inputCells;
+                    else cells = spCells;
+                    cells.update(cellData.x, cellData.y, cellData.z, 1);
                     cellviz.redraw();
-                }, 2000);
-
-                function colorCellsRandomly(myCells) {
-                    for (var cx = 0; cx < x; cx++) {
-                        for (var cy = 0; cy < y; cy++) {
-                            for (var cz = 0; cz < z; cz++) {
-                                myCells.update(
-                                    cx, cy, cz,
-                                    getRandomIntInclusive(0, 2)
-                                );
-                            }
-                        }
-                    }
                 }
 
-                function getRandomIntInclusive(min, max) {
-                    min = Math.ceil(min);
-                    max = Math.floor(max);
-                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                function onDocumentMouseDown( event ) {
+                	// the following line would stop any other event handler from firing
+                	// (such as the mouse's TrackballControls)
+                	// event.preventDefault();
+
+                	// update the mouse variable
+                	var x = ( event.clientX / window.innerWidth ) * 2 - 1;
+                	var y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+                	// find intersections
+                	// create a Ray with origin at the mouse position
+                	//   and direction into the scene (camera direction)
+                	var vector = new THREE.Vector3( x, y, 1 );
+                	cellviz.projector.unprojectVector( vector, cellviz.camera );
+                	var ray = new THREE.Raycaster( cellviz.camera.position, vector.sub( cellviz.camera.position ).normalize() );
+                	// create an array containing all objects in the scene with which the ray intersects
+                	var intersects = ray.intersectObjects(cellviz.getTargets());
+
+                	// if there is one (or more) intersections
+                	if ( intersects.length > 0 ) {
+                        cellClicked(intersects[0].object._cellData);
+                	}
                 }
+
+                document.addEventListener( 'mousedown', onDocumentMouseDown, false );
 
             });
 

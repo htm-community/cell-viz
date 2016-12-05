@@ -29,12 +29,21 @@
                 var y = cellsPerColumn;
                 var z = lengthLargestSide;
 
+                var colors = {
+                    0: 0xFFFFFF, // white for inactive cells
+                    1: 0xFFFF00, // yellow for active cells
+                    2: 0xFF0000, // red for predictive cells
+                    3: 0xFFAC33, // orange for active & predictive cells
+                    4: 0x6699FF, // cyan for correctly predicted cells from last step
+                    5: 0x00FF00  // green for input bits
+                };
+
                 // The Cells interface is how to update the visualization inside the canvas.
                 var cells = new HtmCells(x, y, z);
 
                 // The HtmCellVisualization object handles all interactions with the DOM.
                 var cellviz = new SingleLayerVisualization(
-                    cells
+                    cells, {colors: colors}
                 );
 
                 // Renders the canvas with empty cells into the DOM and canvas.
@@ -68,7 +77,7 @@
                             for (var cz = 0; cz < z; cz++) {
                                 myCells.update(
                                     cx, cy, cz,
-                                    getRandomIntInclusive(0, 2)
+                                    getRandomIntInclusive(0, 5)
                                 );
                             }
                         }
