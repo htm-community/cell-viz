@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=utf-8>
+        <title>Cell Regions</title>
+        <style>
+            body { margin: 0; }
+            canvas { width: 100%; height: 100% }
+        </style>
+    </head>
+    <body>
+
+        <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
+        <script src="dyson-bundle.js"></script>
+        <script>
+
+            $(function() {
+
+                // The SP space.
+                var numColumns = 2048;
+                var cellsPerColumn = 4;
+                var lengthLargestSide = 32;
+
+                // Translate into cell dimensions.
+                // x = left->right
+                // y = down->up
+                // z = near->far
+                var x = numColumns / lengthLargestSide;
+                var y = cellsPerColumn;
+                var z = lengthLargestSide;
+
+                var colors = {
+                    0: 0xFFFFFF, // white for inactive cells
+                    1: 0xFFFF00, // yellow for active cells
+                    2: 0xFF0000, // red for predictive cells
+                    3: 0xFFAC33, // orange for active & predictive cells
+                    4: 0x6699FF, // cyan for correctly predicted cells from last step
+                    5: 0x00FF00  // green for input bits
+                };
+
+
+                // The Cells interface is how to update the visualization inside the canvas.
+                var spCells = new HtmCells(x, y, z);
+
+                // The Input space
+                var inputCells = new HtmCells(32, 1, 32);
+
+                // The HtmCellVisualization object handles all interactions with the DOM.
+                var cellviz = new SpToInputVisualization(
+                    inputCells, spCells, { colors: colors }
+                );
+
+                // Renders the canvas with empty cells into the DOM and canvas.
+                cellviz.render({
+                    position: {
+                        //x: -40,
+                        //y: 10
+                    },
+                    rotation: {
+                        x: 90 * Math.PI / 180,
+                        // y: 45 * Math.PI / 180,
+                        // z: 90 * Math.PI / 180
+                    },
+                    camera: {
+                        z: 45
+                    }
+                });
+
+                function cellClicked(cellData) {
+                    var cells;
+                    console.log(cellData);
+                    if (cellData.type == 'inputCells') cells = inputCells;
+                    else cells = spCells;
+                    cells.update(cellData.x, cellData.y, cellData.z, 1);
+                    cellviz.redraw();
+                }
+
+                function onDocumentMouseDown( event ) {
+                	// the following line would stop any other event handler from firing
+                	// (such as the mouse's TrackballControls)
+                	// event.preventDefault();
+
+                	// update the mouse variable
+                	var x = ( event.clientX / window.innerWidth ) * 2 - 1;
+                	var y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+                	// find intersections
+                	// create a Ray with origin at the mouse position
+                	//   and direction into the scene (camera direction)
+                	var vector = new THREE.Vector3( x, y, 1 );
+                	cellviz.projector.unprojectVector( vector, cellviz.camera );
+                	var ray = new THREE.Raycaster( cellviz.camera.position, vector.sub( cellviz.camera.position ).normalize() );
+                	// create an array containing all objects in the scene with which the ray intersects
+                	var intersects = ray.intersectObjects(cellviz.getTargets());
+
+                	// if there is one (or more) intersections
+                	if ( intersects.length > 0 ) {
+                        cellClicked(intersects[0].object._cellData);
+                	}
+                }
+
+                document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+
+            });
+
+        </script>
+    </body>
+</html>
