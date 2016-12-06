@@ -40,6 +40,14 @@ function htmCellValueToColor(cellValue, colors) {
     return color;
 }
 
+function getOffsetCenterPosition(cells, spacing) {
+    return {
+        x: 0 - (cells.getX() * spacing) / 2,
+        y: 0 + (cells.getY() * spacing) / 2,
+        z: 0
+    };
+}
+
 /*******************************************************************************
  * BASE VIZ class
  *******************************************************************************/
@@ -129,15 +137,15 @@ BaseGridVisualization.prototype._setupScene = function() {
     var renderer;
     this.scene = new THREE.Scene();
     scene = this.scene;
-    scene.fog = new THREE.FogExp2(0xEEEEEE, 0.002);
-
     this.light = new THREE.PointLight(0xFFFFFF);
     scene.add(this.light);
 
-    renderer = this.renderer = new THREE.WebGLRenderer({antialias: false});
-    renderer.setClearColor(scene.fog.color);
+    renderer = this.renderer = new THREE.WebGLRenderer();
+    renderer.setClearColor(0xf0f0f0);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(this.width, this.height);
+
+    this.$container.append(renderer.domElement);
 };
 
 /*
@@ -146,7 +154,7 @@ BaseGridVisualization.prototype._setupScene = function() {
  * one time for each grid of cells created in the scene.
  */
 BaseGridVisualization.prototype._createMeshCells =
-function(cells, grid, position, type) {
+function(cells, grid, type, layerSpacing) {
     var scene = this.scene;
     var colors = this.colors;
     var meshCells = [];
@@ -154,16 +162,12 @@ function(cells, grid, position, type) {
     var x = cells.getX();
     var y = cells.getY();
     var z = cells.getZ();
-    var initialXOffset = (spacing * x) / 2;
-    var initialYOffset = (spacing * y) / 2;
-    var initialZOffset = (spacing * z) / 2;
     var ydim, zdim, cube, material, cellValue;
+    var position = getOffsetCenterPosition(cells, spacing);
 
-    if (! type) type = 'default';
-    if (! position) position = {};
-    if (position.x == undefined) position.x = 0;
-    if (position.y == undefined) position.y = 0;
-    if (position.z == undefined) position.z = 0;
+    if (layerSpacing) {
+        position.z += layerSpacing;
+    }
 
     for (var cx = 0; cx < x; cx++) {
         ydim = [];
@@ -175,9 +179,15 @@ function(cells, grid, position, type) {
                     color: htmCellValueToColor(cellValue, colors)
                 });
                 cube = new THREE.Mesh(this.geometry, material);
-                cube.position.x = position.x + spacing * cx - initialXOffset;
-                cube.position.y = position.y + spacing * cy - initialYOffset;
-                cube.position.z = position.z + spacing * cz - initialZOffset;
+                cube.position.x = position.x + spacing * cx;
+                cube.position.y = position.y - spacing * cy;
+                cube.position.z = position.z - spacing * cz;
+                // if (cx == 0 && cy == 0 && cz == 0) {
+                //     console.log('First cube position:');
+                //     console.log(cube.position);
+                //     console.log('Initial offsets:');
+                //     console.log('\t%s, %s, %s', initialXOffset, initialYOffset, initialZOffset);
+                // }
                 cube.updateMatrix();
                 cube.matrixAutoUpdate = false;
                 cube._cellData = {
@@ -259,7 +269,7 @@ SingleLayerVisualization.prototype.render = function(opts) {
     var h = this.height;
     var grid = new THREE.Group();
 
-    this.meshCells = this._createMeshCells(this.cells, grid, opts.position);
+    this.meshCells = this._createMeshCells(this.cells, grid);
 
     function innerRender() {
         light.position.x = camera.position.x;
@@ -345,32 +355,14 @@ SpToInputVisualization.prototype.render = function(opts) {
     var h = this.height;
     var inputGrid = new THREE.Group();
     var spGrid = new THREE.Group();
-
-    var position = opts.position;
-
-    if (! position) position = {};
-    if (! position.x) position.x = 0;
-    if (! position.y) position.y = 0;
-    if (! position.z) position.z = 0;
-
-    var inputPosition = {
-        x: position.x,
-        y: position.y - 16,
-        z: position.z
-    };
+    var layerSpacing = opts.layerSpacing || -10;
 
     this.spMeshCells = this._createMeshCells(
-        this.spColumns, spGrid, position, 'spColumns'
+        this.spColumns, spGrid, 'spColumns'
     );
     this.inputMeshCells = this._createMeshCells(
-        this.inputCells, inputGrid, inputPosition, 'inputCells'
+        this.inputCells, inputGrid, 'inputCells', layerSpacing
     );
-
-    renderer = new THREE.WebGLRenderer( { antialias: false } );
-
-    renderer.setClearColor( scene.fog.color );
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize(w, h);
 
     function innerRender() {
         light.position.x = camera.position.x;
@@ -446,8 +438,8 @@ function HtmCells(x, y, z) {
     this.zdim = z;
     this.cells = [];
     // Create initially empty matrices.
-    for (var cy = 0; cy < y; cy++) {
-        this.cells.push(mathjs.zeros(x, z, 'sparse'));
+    for (var cx = 0; cx < x; cx++) {
+        this.cells.push(mathjs.zeros(y, z, 'sparse'));
     }
 }
 
@@ -472,7 +464,7 @@ HtmCells.prototype.getZ = function() {
  */
 HtmCells.prototype.getCellValue = function(x, y, z) {
     // TODO: raise error if cell coordinates are invalid.
-    return this.cells[y].subset(mathjs.index(x, z));
+    return this.cells[x].subset(mathjs.index(y, z));
 };
 
 /**
@@ -482,20 +474,27 @@ HtmCells.prototype.getCellValue = function(x, y, z) {
  * @param z (int) z coordinate
  * @param value {*} Whatever value you want the cell to have.
  */
-HtmCells.prototype.update = function(x, y, z, value) {
-    // TODO: raise error if cell coordinates are invalid.
-    this.cells[y].subset(mathjs.index(x, z), value);
+HtmCells.prototype.update = function(x, y, z, value, opts) {
+    var currentValue = this.getCellValue(x, y, z);
+    if (opts == undefined) opts = {overwrite: true};
+    if (opts.overwrite) {
+        if (!opts.exclude || opts.exclude != currentValue) {
+            this.cells[x].subset(mathjs.index(y, z), value);
+        }
+    } else {
+        if (! currentValue) this.cells[x].subset(mathjs.index(y, z), value);
+    }
 };
 
 /**
  * Updates all cell values to given value.
  * @param value {*} Whatever value you want the cells to have.
  */
-HtmCells.prototype.updateAll = function(value) {
+HtmCells.prototype.updateAll = function(value, opts) {
     for (var cx = 0; cx < this.xdim; cx++) {
         for (var cy = 0; cy < this.ydim; cy++) {
             for (var cz = 0; cz < this.zdim; cz++) {
-                this.cells[cy].subset(mathjs.index(cx, cz), value);
+                this.update(cx, cy, cz, value, opts);
             }
         }
     }

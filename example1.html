@@ -16,19 +16,6 @@
 
             $(function() {
 
-                // The problem space.
-                var numColumns = 2048;
-                var cellsPerColumn = 4;
-                var lengthLargestSide = 64;
-
-                // Translate into cell dimensions.
-                // x = left->right
-                // y = down->up
-                // z = near->far
-                var x = numColumns / lengthLargestSide;
-                var y = cellsPerColumn;
-                var z = lengthLargestSide;
-
                 var colors = {
                     0: 0xFFFFFF, // white for inactive cells
                     1: 0xFFFF00, // yellow for active cells
@@ -39,21 +26,20 @@
                 };
 
                 // The Cells interface is how to update the visualization inside the canvas.
-                var cells = new HtmCells(x, y, z);
+                var cells = new HtmCells(10, 10, 4);
 
                 // The HtmCellVisualization object handles all interactions with the DOM.
                 var cellviz = new SingleLayerVisualization(
                     cells, {colors: colors}
                 );
 
+                cells.update(0, 0, 0, 1);
+                cells.update(cells.getX() - 1, cells.getY() - 1, cells.getZ() - 1, 2);
+
                 // Renders the canvas with empty cells into the DOM and canvas.
                 cellviz.render({
-                    position: {
-                        // x: -40,
-                        // y: 40
-                    },
                     rotation: {
-                        x: 5 * Math.PI / 180,
+                        // x: 5 * Math.PI / 180,
                         // y: 4 * Math.PI / 180,
                         // z: 90 * Math.PI / 180
                     },
@@ -61,6 +47,7 @@
                         // z: 40
                     }
                 });
+
 
                 // Update cells with random colors every so often.
                 setInterval(function() {
@@ -71,12 +58,12 @@
                     // the drawing. It must be called to show the updated cell
                     // representation.
                     cellviz.redraw();
-                }, 2000);
+                }, 5000);
 
                 function colorCellsRandomly(myCells) {
-                    for (var cx = 0; cx < x; cx++) {
-                        for (var cy = 0; cy < y; cy++) {
-                            for (var cz = 0; cz < z; cz++) {
+                    for (var cx = 0; cx < cells.getX(); cx++) {
+                        for (var cy = 0; cy < cells.getY(); cy++) {
+                            for (var cz = 0; cz < cells.getZ(); cz++) {
                                 myCells.update(
                                     cx, cy, cz,
                                     getRandomIntInclusive(0, 5)

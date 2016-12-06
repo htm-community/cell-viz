@@ -5,29 +5,19 @@
         <title>Cell Regions</title>
         <style>
             body { margin: 0; }
+            #viz { width: 100%; height: 1000px}
             canvas { width: 100%; height: 100% }
         </style>
     </head>
     <body>
+
+        <div id="viz"></div>
 
         <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
         <script src="dyson-bundle.js"></script>
         <script>
 
             $(function() {
-
-                // The SP space.
-                var numColumns = 2048;
-                var cellsPerColumn = 4;
-                var lengthLargestSide = 32;
-
-                // Translate into cell dimensions.
-                // x = left->right
-                // y = down->up
-                // z = near->far
-                var x = numColumns / lengthLargestSide;
-                var y = cellsPerColumn;
-                var z = lengthLargestSide;
 
                 var colors = {
                     0: 0xFFFFFF, // white for inactive cells
@@ -40,29 +30,35 @@
 
 
                 // The Cells interface is how to update the visualization inside the canvas.
-                var spCells = new HtmCells(x, y, z);
+                var spCells = new HtmCells(10, 10, 4);
 
                 // The Input space
-                var inputCells = new HtmCells(64, 1, 64);
+                var inputCells = new HtmCells(32, 32, 1);
 
                 // The HtmCellVisualization object handles all interactions with the DOM.
                 var cellviz = new SpToInputVisualization(
-                    inputCells, spCells, { colors: colors }
+                    inputCells,
+                    spCells, {
+                        colors: colors,
+                        elementId: 'viz'
+                    }
                 );
+
+                spCells.update(0, 0, 0, 1);
+                spCells.update(spCells.getX() - 1, spCells.getY() - 1, spCells.getZ() - 1, 2);
+
+                inputCells.update(0, 0, 0, 1);
+                inputCells.update(inputCells.getX() - 1, inputCells.getY() - 1, inputCells.getZ() - 1, 2);
 
                 // Renders the canvas with empty cells into the DOM and canvas.
                 cellviz.render({
-                    position: {
-                        //x: -40,
-                        //y: 10
-                    },
                     rotation: {
-                        x: 20 * Math.PI / 180,
+                        // x: - 75 * Math.PI / 180,
                         // y: 45 * Math.PI / 180,
                         // z: 5 * Math.PI / 180
                     },
                     camera: {
-                        z: 95
+                        // z: 95
                     }
                 });
 
@@ -81,14 +77,14 @@
                 	// event.preventDefault();
 
                 	// update the mouse variable
-                	var x = ( event.clientX / window.innerWidth ) * 2 - 1;
-                	var y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+                	var x = ( event.clientX / cellviz.renderer.domElement.clientWidth ) * 2 - 1;
+                	var y = - ( event.clientY / cellviz.renderer.domElement.clientHeight ) * 2 + 1;
 
-                	// find intersections
+                    // find intersections
                 	// create a Ray with origin at the mouse position
                 	//   and direction into the scene (camera direction)
                 	var vector = new THREE.Vector3( x, y, 1 );
-                	cellviz.projector.unprojectVector( vector, cellviz.camera );
+                    vector.unproject(cellviz.camera);
                 	var ray = new THREE.Raycaster( cellviz.camera.position, vector.sub( cellviz.camera.position ).normalize() );
                 	// create an array containing all objects in the scene with which the ray intersects
                 	var intersects = ray.intersectObjects(cellviz.getTargets());
