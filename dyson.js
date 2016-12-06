@@ -127,7 +127,6 @@ BaseGridVisualization.prototype._setupControls = function() {
 BaseGridVisualization.prototype._setupScene = function() {
     var scene;
     var renderer;
-
     this.scene = new THREE.Scene();
     scene = this.scene;
     scene.fog = new THREE.FogExp2(0xEEEEEE, 0.002);
@@ -135,8 +134,7 @@ BaseGridVisualization.prototype._setupScene = function() {
     this.light = new THREE.PointLight(0xFFFFFF);
     scene.add(this.light);
 
-    this.renderer = new THREE.WebGLRenderer({antialias: false});
-    renderer = this.renderer;
+    renderer = this.renderer = new THREE.WebGLRenderer({antialias: false});
     renderer.setClearColor(scene.fog.color);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(this.width, this.height);
@@ -148,7 +146,7 @@ BaseGridVisualization.prototype._setupScene = function() {
  * one time for each grid of cells created in the scene.
  */
 BaseGridVisualization.prototype._createMeshCells =
-function(cells, position, rotation, grid, type) {
+function(cells, grid, position, type) {
     var scene = this.scene;
     var colors = this.colors;
     var meshCells = [];
@@ -159,13 +157,17 @@ function(cells, position, rotation, grid, type) {
     var initialXOffset = (spacing * x) / 2;
     var initialYOffset = (spacing * y) / 2;
     var initialZOffset = (spacing * z) / 2;
-    var xdim, zdim, cube, material, cellValue;
+    var ydim, zdim, cube, material, cellValue;
 
     if (! type) type = 'default';
+    if (! position) position = {};
+    if (position.x == undefined) position.x = 0;
+    if (position.y == undefined) position.y = 0;
+    if (position.z == undefined) position.z = 0;
 
-    for (var cy = 0; cy < y; cy++) {
-        xdim = [];
-        for (var cx = 0; cx < x; cx++) {
+    for (var cx = 0; cx < x; cx++) {
+        ydim = [];
+        for (var cy = 0; cy < y; cy++) {
             zdim = [];
             for (var cz = 0; cz < z; cz++) {
                 cellValue = cells.getCellValue(cx, cy, cz);
@@ -173,9 +175,9 @@ function(cells, position, rotation, grid, type) {
                     color: htmCellValueToColor(cellValue, colors)
                 });
                 cube = new THREE.Mesh(this.geometry, material);
-                cube.position.y = spacing * cy - initialYOffset;
-                cube.position.x = spacing * cx - initialXOffset;
-                cube.position.z = spacing * cz - initialZOffset;
+                cube.position.x = position.x + spacing * cx - initialXOffset;
+                cube.position.y = position.y + spacing * cy - initialYOffset;
+                cube.position.z = position.z + spacing * cz - initialZOffset;
                 cube.updateMatrix();
                 cube.matrixAutoUpdate = false;
                 cube._cellData = {
@@ -186,22 +188,10 @@ function(cells, position, rotation, grid, type) {
                 // Keep track of cubes in the grid so they can be clickable.
                 this.targets.push(cube);
             }
-            xdim.push(zdim);
+            ydim.push(zdim);
         }
-        meshCells.push(xdim);
+        meshCells.push(ydim);
     }
-
-    if (position) {
-        if (position.x) grid.position.x = position.x;
-        if (position.y) grid.position.y = position.y;
-        if (position.z) grid.position.z = position.z;
-    }
-    if (rotation) {
-        if (rotation.x) grid.rotation.x = rotation.x;
-        if (rotation.y) grid.rotation.y = rotation.y;
-        if (rotation.z) grid.rotation.z = rotation.z;
-    }
-
     scene.add(grid);
     return meshCells;
 };
@@ -213,10 +203,10 @@ function(cells, position, rotation, grid, type) {
 BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells) {
     var colors = this.colors;
     var cube, cellValue;
-    for (var cy = 0; cy < cells.getY(); cy++) {
-        for (var cx = 0; cx < cells.getX(); cx++) {
+    for (var cx = 0; cx < cells.getX(); cx++) {
+        for (var cy = 0; cy < cells.getY(); cy++) {
             for (var cz = 0; cz < cells.getZ(); cz++) {
-                cube = meshCells[cy][cx][cz];
+                cube = meshCells[cx][cy][cz];
                 cellValue = cells.getCellValue(cx, cy, cz);
                 cube.material.color = new THREE.Color(
                     htmCellValueToColor(cellValue, colors)
@@ -269,15 +259,7 @@ SingleLayerVisualization.prototype.render = function(opts) {
     var h = this.height;
     var grid = new THREE.Group();
 
-    this.meshCells = this._createMeshCells(
-        this.cells, opts.position, opts.rotation, grid
-    );
-
-    renderer = new THREE.WebGLRenderer( { antialias: false } );
-
-    renderer.setClearColor( scene.fog.color );
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize(w, h);
+    this.meshCells = this._createMeshCells(this.cells, grid, opts.position);
 
     function innerRender() {
         light.position.x = camera.position.x;
@@ -309,9 +291,14 @@ SingleLayerVisualization.prototype.render = function(opts) {
     setTimeout(animate, 0);
 
     if (opts.camera) {
-        if (opts.camera.x) camera.position.x = opts.camera.x;
-        if (opts.camera.y) camera.position.y = opts.camera.y;
-        if (opts.camera.z) camera.position.z = opts.camera.z;
+        if (opts.camera.x != undefined) camera.position.x = opts.camera.x;
+        if (opts.camera.y != undefined) camera.position.y = opts.camera.y;
+        if (opts.camera.z != undefined) camera.position.z = opts.camera.z;
+    }
+    if (opts.rotation) {
+        if (opts.rotation.x != undefined) grid.rotation.x = opts.rotation.x;
+        if (opts.rotation.y != undefined) grid.rotation.y = opts.rotation.y;
+        if (opts.rotation.z != undefined) grid.rotation.z = opts.rotation.z;
     }
 };
 
@@ -358,6 +345,7 @@ SpToInputVisualization.prototype.render = function(opts) {
     var h = this.height;
     var inputGrid = new THREE.Group();
     var spGrid = new THREE.Group();
+
     var position = opts.position;
 
     if (! position) position = {};
@@ -367,15 +355,15 @@ SpToInputVisualization.prototype.render = function(opts) {
 
     var inputPosition = {
         x: position.x,
-        y: position.y,
-        z: position.z + 10
+        y: position.y - 16,
+        z: position.z
     };
 
     this.spMeshCells = this._createMeshCells(
-        this.spColumns, position, opts.rotation, spGrid, 'spColumns'
+        this.spColumns, spGrid, position, 'spColumns'
     );
     this.inputMeshCells = this._createMeshCells(
-        this.inputCells, inputPosition, opts.rotation, inputGrid, 'inputCells'
+        this.inputCells, inputGrid, inputPosition, 'inputCells'
     );
 
     renderer = new THREE.WebGLRenderer( { antialias: false } );
@@ -418,6 +406,21 @@ SpToInputVisualization.prototype.render = function(opts) {
         if (opts.camera.y) camera.position.y = opts.camera.y;
         if (opts.camera.z) camera.position.z = opts.camera.z;
     }
+    if (opts.rotation) {
+        if (opts.rotation.x != undefined) {
+            inputGrid.rotation.x = opts.rotation.x;
+            spGrid.rotation.x = opts.rotation.x;
+        }
+        if (opts.rotation.y != undefined) {
+            inputGrid.rotation.y = opts.rotation.y;
+            spGrid.rotation.y = opts.rotation.y;
+        }
+        if (opts.rotation.z != undefined) {
+            inputGrid.rotation.z = opts.rotation.z;
+            spGrid.rotation.z = opts.rotation.z;
+        }
+    }
+
 };
 
 SpToInputVisualization.prototype.redraw = function() {

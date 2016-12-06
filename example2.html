@@ -43,7 +43,7 @@
                 var spCells = new HtmCells(x, y, z);
 
                 // The Input space
-                var inputCells = new HtmCells(32, 1, 32);
+                var inputCells = new HtmCells(64, 1, 64);
 
                 // The HtmCellVisualization object handles all interactions with the DOM.
                 var cellviz = new SpToInputVisualization(
@@ -57,12 +57,12 @@
                         //y: 10
                     },
                     rotation: {
-                        x: 90 * Math.PI / 180,
+                        x: 20 * Math.PI / 180,
                         // y: 45 * Math.PI / 180,
-                        // z: 90 * Math.PI / 180
+                        // z: 5 * Math.PI / 180
                     },
                     camera: {
-                        z: 45
+                        z: 95
                     }
                 });
 
