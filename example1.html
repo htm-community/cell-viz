@@ -33,8 +33,8 @@
                     cells, {colors: colors}
                 );
 
-                cells.update(0, 0, 0, 1);
-                cells.update(cells.getX() - 1, cells.getY() - 1, cells.getZ() - 1, 2);
+                cells.update(0, 0, 0, {color: 1});
+                cells.update(cells.getX() - 1, cells.getY() - 1, cells.getZ() - 1, {color: 2});
 
                 // Renders the canvas with empty cells into the DOM and canvas.
                 cellviz.render({
@@ -66,7 +66,7 @@
                             for (var cz = 0; cz < cells.getZ(); cz++) {
                                 myCells.update(
                                     cx, cy, cz,
-                                    getRandomIntInclusive(0, 5)
+                                    {color: getRandomIntInclusive(0, 5)}
                                 );
                             }
                         }

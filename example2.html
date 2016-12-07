@@ -44,11 +44,11 @@
                     }
                 );
 
-                spCells.update(0, 0, 0, 1);
-                spCells.update(spCells.getX() - 1, spCells.getY() - 1, spCells.getZ() - 1, 2);
+                spCells.update(0, 0, 0, {color: 1});
+                spCells.update(spCells.getX() - 1, spCells.getY() - 1, spCells.getZ() - 1, {color: 2});
 
-                inputCells.update(0, 0, 0, 1);
-                inputCells.update(inputCells.getX() - 1, inputCells.getY() - 1, inputCells.getZ() - 1, 2);
+                inputCells.update(0, 0, 0, {color: 1});
+                inputCells.update(inputCells.getX() - 1, inputCells.getY() - 1, inputCells.getZ() - 1, {color: 2});
 
                 // Renders the canvas with empty cells into the DOM and canvas.
                 cellviz.render({
@@ -67,7 +67,7 @@
                     console.log(cellData);
                     if (cellData.type == 'inputCells') cells = inputCells;
                     else cells = spCells;
-                    cells.update(cellData.x, cellData.y, cellData.z, 1);
+                    cells.update(cellData.x, cellData.y, cellData.z, {color: 1});
                     cellviz.redraw();
                 }
 

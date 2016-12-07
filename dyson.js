@@ -30,7 +30,7 @@ var ColladaLoader = require('three-collada-loader');
 // I don't want to restrict what can be stored inside an HtmCell, so this will
 // keep it generic for now (client knows how to load / unload the cell value).
 function htmCellValueToColor(cellValue, colors) {
-    var color = colors[cellValue];
+    var color = colors[cellValue.color];
     if (color == undefined) {
         throw new Error(
             'Cannot convert cell value "' + cellValue + '" into a color.' +
@@ -182,12 +182,6 @@ function(cells, grid, type, layerSpacing) {
                 cube.position.x = position.x + spacing * cx;
                 cube.position.y = position.y - spacing * cy;
                 cube.position.z = position.z - spacing * cz;
-                // if (cx == 0 && cy == 0 && cz == 0) {
-                //     console.log('First cube position:');
-                //     console.log(cube.position);
-                //     console.log('Initial offsets:');
-                //     console.log('\t%s, %s, %s', initialXOffset, initialYOffset, initialZOffset);
-                // }
                 cube.updateMatrix();
                 cube.matrixAutoUpdate = false;
                 cube._cellData = {
@@ -437,9 +431,20 @@ function HtmCells(x, y, z) {
     this.ydim = y;
     this.zdim = z;
     this.cells = [];
+
     // Create initially empty matrices.
-    for (var cx = 0; cx < x; cx++) {
-        this.cells.push(mathjs.zeros(y, z, 'sparse'));
+    var ylist;
+    var zlist;
+    for (var cx = 0; cx < this.xdim; cx++) {
+        ylist = [];
+        for (var cy = 0; cy < this.ydim; cy++) {
+            zlist = [];
+            for (var cz = 0; cz < this.zdim; cz++) {
+                zlist.push({color: 0});
+            }
+            ylist.push(zlist);
+        }
+        this.cells.push(ylist);
     }
 }
 
@@ -464,7 +469,7 @@ HtmCells.prototype.getZ = function() {
  */
 HtmCells.prototype.getCellValue = function(x, y, z) {
     // TODO: raise error if cell coordinates are invalid.
-    return this.cells[x].subset(mathjs.index(y, z));
+    return this.cells[x][y][z];
 };
 
 /**
@@ -472,17 +477,18 @@ HtmCells.prototype.getCellValue = function(x, y, z) {
  * @param x (int) x coordinate
  * @param y (int) y coordinate
  * @param z (int) z coordinate
- * @param value {*} Whatever value you want the cell to have.
+ * @param value {*} should contain a color, perhaps more
  */
 HtmCells.prototype.update = function(x, y, z, value, opts) {
     var currentValue = this.getCellValue(x, y, z);
-    if (opts == undefined) opts = {overwrite: true};
-    if (opts.overwrite) {
-        if (!opts.exclude || opts.exclude != currentValue) {
-            this.cells[x].subset(mathjs.index(y, z), value);
+    var proposedValue;
+    for (key in value) {
+        proposedValue = value[key];
+        if (opts && opts.exclude && opts.exclude[key] && opts.exclude[key] == currentValue[key]) {
+            // Do not overwrite.
+        } else {
+            currentValue[key] = proposedValue;
         }
-    } else {
-        if (! currentValue) this.cells[x].subset(mathjs.index(y, z), value);
     }
 };
 
