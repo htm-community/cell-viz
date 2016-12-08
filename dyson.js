@@ -60,12 +60,16 @@ function BaseGridVisualization(opts) {
     this.loader = new ColladaLoader();
     this.projector = new THREE.Projector();
     this.targets = [];
+    this.cubeSize = opts.cubeSize || 100;
+    this.clock = new THREE.Clock();
 
     this.loader.options.centerGeometry = true;
 
     // Use a default geometry.
     if (! this.geometry) {
-        this.geometry = new THREE.BoxGeometry(1, 1, 1);
+        this.geometry = new THREE.BoxGeometry(
+            this.cubeSize, this.cubeSize, this.cubeSize
+        );
     }
     // Use a default spacing.
     if (! this.spacing) {
@@ -93,21 +97,18 @@ BaseGridVisualization.prototype._setupContainer = function(elementId) {
 BaseGridVisualization.prototype._setupCamera = function() {
     // Set up camera position.
     this.camera = new THREE.PerspectiveCamera(
-        60, this.width / this.height, 1, 1000
+        25, this.width / this.height, 50, 1e7
     );
-    this.camera.position.z = 50;
+    this.camera.position.z = this.cubeSize * 100;
 };
 
 BaseGridVisualization.prototype._setupControls = function() {
-    this.controls = new TrackballControls(this.camera, this.renderer.domElement);
-    this.controls.rotateSpeed = 1.0;
-    this.controls.zoomSpeed = 1.2;
-    this.controls.panSpeed = 0.8;
-    this.controls.noZoom = false;
-    this.controls.noPan = false;
-    this.controls.staticMoving = true;
-    this.controls.dynamicDampingFactor = 0.3;
-    this.controls.keys = [ 65, 83, 68 ];
+    var controls = this.controls = new THREE.FlyControls( this.camera, this.renderer.domElement );
+	controls.movementSpeed = 1000;
+	controls.rollSpeed = Math.PI / 24;
+	controls.autoForward = false;
+	controls.dragToLook = true;
+
 };
 
 BaseGridVisualization.prototype._setupScene = function() {
@@ -122,6 +123,7 @@ BaseGridVisualization.prototype._setupScene = function() {
     renderer.setClearColor(0xf0f0f0);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(this.width, this.height);
+    renderer.sortObjects = false;
     this.$container.append(renderer.domElement);
 };
 
@@ -151,9 +153,9 @@ function(cells, grid, position, type) {
                     color: cellValue.color
                 });
                 cube = new THREE.Mesh(this.geometry, material);
-                cube.position.x = position.x + spacing * cx;
-                cube.position.y = position.y - spacing * cy;
-                cube.position.z = position.z - spacing * cz;
+                cube.position.x = position.x + (this.cubeSize * spacing) * cx;
+                cube.position.y = position.y - (this.cubeSize * spacing) * cy;
+                cube.position.z = position.z - (this.cubeSize * spacing) * cz;
                 cube.updateMatrix();
                 cube.matrixAutoUpdate = false;
                 cube._cellData = {
@@ -185,9 +187,9 @@ BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells, pos
                 cube = meshCells[cx][cy][cz];
                 cellValue = cells.getCellValue(cx, cy, cz);
                 cube.material.color = new THREE.Color(cellValue.color);
-                cube.position.x = position.x + spacing * cx;
-                cube.position.y = position.y - spacing * cy;
-                cube.position.z = position.z - spacing * cz;
+                cube.position.x = position.x + (this.cubeSize * spacing) * cx;
+                cube.position.y = position.y - (this.cubeSize * spacing) * cy;
+                cube.position.z = position.z - (this.cubeSize * spacing) * cz;
                 cube.updateMatrix();
             }
         }
@@ -237,18 +239,9 @@ SingleLayerVisualization.prototype.render = function(opts) {
     var h = this.height;
     var grid = new THREE.Group();
 
-    var position = this.position = getOffsetCenterPosition(this.cells, this.spacing);
+    var position = this.position = getOffsetCenterPosition(this.cells, this.spacing * this.cubeSize);
 
     this.meshCells = this._createMeshCells(this.cells, grid, position);
-
-    function innerRender() {
-        light.position.x = camera.position.x;
-        light.position.y = camera.position.y;
-        light.position.z = camera.position.z;
-        renderer.render(scene, camera);
-    }
-
-    this.controls.addEventListener('change', innerRender);
 
     window.addEventListener('resize', function() {
         w = me.width = me.$container.innerWidth();
@@ -264,11 +257,17 @@ SingleLayerVisualization.prototype.render = function(opts) {
 
     function animate() {
         requestAnimationFrame(animate);
-        me.controls.update();
         innerRender();
     }
 
-    setTimeout(animate, 0);
+    function innerRender() {
+        var delta = me.clock.getDelta();
+        me.controls.update( delta );
+        light.position.x = camera.position.x;
+        light.position.y = camera.position.y;
+        light.position.z = camera.position.z;
+        renderer.render(scene, camera);
+    }
 
     if (opts.camera) {
         if (opts.camera.x != undefined) camera.position.x = opts.camera.x;
@@ -280,6 +279,8 @@ SingleLayerVisualization.prototype.render = function(opts) {
         if (opts.rotation.y != undefined) grid.rotation.y = opts.rotation.y;
         if (opts.rotation.z != undefined) grid.rotation.z = opts.rotation.z;
     }
+
+    animate();
 };
 
 SingleLayerVisualization.prototype.redraw = function() {
@@ -327,9 +328,9 @@ SpToInputVisualization.prototype.render = function(opts) {
     var inputGrid = new THREE.Group();
     var spGrid = new THREE.Group();
 
-    this.spPosition = getOffsetCenterPosition(this.spColumns, this.spacing);
-    this.inputPosition = getOffsetCenterPosition(this.inputCells, this.spacing);
-    this.inputPosition.z -= this.layerSpacing;
+    this.spPosition = getOffsetCenterPosition(this.spColumns, this.spacing * this.cubeSize);
+    this.inputPosition = getOffsetCenterPosition(this.inputCells, this.spacing * this.cubeSize);
+    this.inputPosition.z -= this.layerSpacing * this.cubeSize;
 
     this.spMeshCells = this._createMeshCells(
         this.spColumns, spGrid, this.spPosition, 'spColumns'
@@ -337,15 +338,6 @@ SpToInputVisualization.prototype.render = function(opts) {
     this.inputMeshCells = this._createMeshCells(
         this.inputCells, inputGrid, this.inputPosition, 'inputCells'
     );
-
-    function innerRender() {
-        light.position.x = camera.position.x;
-        light.position.y = camera.position.y;
-        light.position.z = camera.position.z;
-        renderer.render(scene, camera);
-    }
-
-    this.controls.addEventListener('change', innerRender);
 
     window.addEventListener('resize', function() {
         w = me.width = me.$container.innerWidth();
@@ -359,13 +351,19 @@ SpToInputVisualization.prototype.render = function(opts) {
 
     this.$container.append(renderer.domElement);
 
-    function animate() {
-        requestAnimationFrame(animate);
-        me.controls.update();
-        innerRender();
+    function innerRender() {
+        var delta = me.clock.getDelta();
+        me.controls.update( delta );
+        light.position.x = camera.position.x;
+        light.position.y = camera.position.y;
+        light.position.z = camera.position.z;
+        renderer.render(scene, camera);
     }
 
-    setTimeout(animate, 0);
+    function animate() {
+        requestAnimationFrame(animate);
+        innerRender();
+    }
 
     if (opts.camera) {
         if (opts.camera.x) camera.position.x = opts.camera.x;
@@ -387,12 +385,14 @@ SpToInputVisualization.prototype.render = function(opts) {
         }
     }
 
+    animate();
+
 };
 
 SpToInputVisualization.prototype.redraw = function() {
-    this.spPosition = getOffsetCenterPosition(this.spColumns, this.spacing);
-    this.inputPosition = getOffsetCenterPosition(this.inputCells, this.spacing);
-    this.inputPosition.z -= this.layerSpacing;
+    this.spPosition = getOffsetCenterPosition(this.spColumns, this.spacing * this.cubeSize);
+    this.inputPosition = getOffsetCenterPosition(this.inputCells, this.spacing * this.cubeSize);
+    this.inputPosition.z -= this.layerSpacing * this.cubeSize;
     this._applyMeshCells(this.inputCells, this.inputMeshCells, this.inputPosition);
     this._applyMeshCells(this.spColumns, this.spMeshCells, this.spPosition);
 };
