@@ -96,8 +96,8 @@ function BaseGridVisualization(opts) {
 
     this._setupContainer(opts.elementId);
     this._setupCamera();
-    this._setupControls();
     this._setupScene();
+    this._setupControls();
 }
 
 BaseGridVisualization.prototype._setupContainer = function(elementId) {
@@ -121,7 +121,7 @@ BaseGridVisualization.prototype._setupCamera = function() {
 };
 
 BaseGridVisualization.prototype._setupControls = function() {
-    this.controls = new TrackballControls(this.camera);
+    this.controls = new TrackballControls(this.camera, this.renderer.domElement);
     this.controls.rotateSpeed = 1.0;
     this.controls.zoomSpeed = 1.2;
     this.controls.panSpeed = 0.8;
@@ -144,7 +144,6 @@ BaseGridVisualization.prototype._setupScene = function() {
     renderer.setClearColor(0xf0f0f0);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(this.width, this.height);
-
     this.$container.append(renderer.domElement);
 };
 
@@ -154,20 +153,16 @@ BaseGridVisualization.prototype._setupScene = function() {
  * one time for each grid of cells created in the scene.
  */
 BaseGridVisualization.prototype._createMeshCells =
-function(cells, grid, type, layerSpacing) {
+function(cells, grid, position, type) {
     var scene = this.scene;
     var colors = this.colors;
     var meshCells = [];
     var spacing = this.spacing;
+    var layerSpacing = this.layerSpacing;
     var x = cells.getX();
     var y = cells.getY();
     var z = cells.getZ();
     var ydim, zdim, cube, material, cellValue;
-    var position = getOffsetCenterPosition(cells, spacing);
-
-    if (layerSpacing) {
-        position.z += layerSpacing;
-    }
 
     for (var cx = 0; cx < x; cx++) {
         ydim = [];
@@ -204,9 +199,10 @@ function(cells, grid, type, layerSpacing) {
  * Updates the mesh cell colors based on the cells, which might have changed.
  * This function should only be called when the cells change.
  */
-BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells) {
+BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells, position) {
     var colors = this.colors;
     var cube, cellValue;
+    var spacing = this.spacing;
     for (var cx = 0; cx < cells.getX(); cx++) {
         for (var cy = 0; cy < cells.getY(); cy++) {
             for (var cz = 0; cz < cells.getZ(); cz++) {
@@ -215,6 +211,10 @@ BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells) {
                 cube.material.color = new THREE.Color(
                     htmCellValueToColor(cellValue, colors)
                 );
+                cube.position.x = position.x + spacing * cx;
+                cube.position.y = position.y - spacing * cy;
+                cube.position.z = position.z - spacing * cz;
+                cube.updateMatrix();
             }
         }
     }
@@ -263,7 +263,9 @@ SingleLayerVisualization.prototype.render = function(opts) {
     var h = this.height;
     var grid = new THREE.Group();
 
-    this.meshCells = this._createMeshCells(this.cells, grid);
+    var position = getOffsetCenterPosition(this.cells, this.spacing);
+
+    this.meshCells = this._createMeshCells(this.cells, grid, position);
 
     function innerRender() {
         light.position.x = camera.position.x;
@@ -326,6 +328,7 @@ function SpToInputVisualization(inputCells, spColumns, opts) {
     if (!opts) opts = {};
     this.inputCells = inputCells;
     this.spColumns = spColumns;
+    this.layerSpacing = opts.layerSpacing || 10;
     this.inputMeshCells = [];
     this.spMeshCells = [];
     BaseGridVisualization.call(this, opts);
@@ -349,13 +352,16 @@ SpToInputVisualization.prototype.render = function(opts) {
     var h = this.height;
     var inputGrid = new THREE.Group();
     var spGrid = new THREE.Group();
-    var layerSpacing = opts.layerSpacing || -10;
+
+    this.spPosition = getOffsetCenterPosition(this.spColumns, this.spacing);
+    this.inputPosition = getOffsetCenterPosition(this.inputCells, this.spacing);
+    this.inputPosition.z -= this.layerSpacing;
 
     this.spMeshCells = this._createMeshCells(
-        this.spColumns, spGrid, 'spColumns'
+        this.spColumns, spGrid, this.spPosition, 'spColumns'
     );
     this.inputMeshCells = this._createMeshCells(
-        this.inputCells, inputGrid, 'inputCells', layerSpacing
+        this.inputCells, inputGrid, this.inputPosition, 'inputCells'
     );
 
     function innerRender() {
@@ -410,8 +416,11 @@ SpToInputVisualization.prototype.render = function(opts) {
 };
 
 SpToInputVisualization.prototype.redraw = function() {
-    this._applyMeshCells(this.inputCells, this.inputMeshCells);
-    this._applyMeshCells(this.spColumns, this.spMeshCells);
+    this.spPosition = getOffsetCenterPosition(this.spColumns, this.spacing);
+    this.inputPosition = getOffsetCenterPosition(this.inputCells, this.spacing);
+    this.inputPosition.z -= this.layerSpacing;
+    this._applyMeshCells(this.inputCells, this.inputMeshCells, this.inputPosition);
+    this._applyMeshCells(this.spColumns, this.spMeshCells, this.spPosition);
 };
 
 /*******************************************************************************
