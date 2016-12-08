@@ -5,29 +5,16 @@
         <title>Cell Regions</title>
         <style>
             body { margin: 0; }
-            #viz { width: 100%; height: 1000px}
             canvas { width: 100%; height: 100% }
         </style>
     </head>
     <body>
-
-        <div id="viz"></div>
 
         <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
         <script src="dyson-bundle.js"></script>
         <script>
 
             $(function() {
-
-                var colors = {
-                    0: 0xFFFFFF, // white for inactive cells
-                    1: 0xFFFF00, // yellow for active cells
-                    2: 0xFF0000, // red for predictive cells
-                    3: 0xFFAC33, // orange for active & predictive cells
-                    4: 0x6699FF, // cyan for correctly predicted cells from last step
-                    5: 0x00FF00  // green for input bits
-                };
-
 
                 // The Cells interface is how to update the visualization inside the canvas.
                 var spCells = new HtmCells(10, 10, 4);
@@ -36,19 +23,17 @@
                 var inputCells = new HtmCells(32, 32, 1);
 
                 // The HtmCellVisualization object handles all interactions with the DOM.
-                var cellviz = new SpToInputVisualization(
-                    inputCells,
-                    spCells, {
-                        colors: colors,
-                        elementId: 'viz'
-                    }
-                );
+                var cellviz = new SpToInputVisualization(inputCells, spCells);
 
-                spCells.update(0, 0, 0, {color: 1});
-                spCells.update(spCells.getX() - 1, spCells.getY() - 1, spCells.getZ() - 1, {color: 2});
+                // Clear them out.
+                spCells.updateAll({color: 0xFFFFFF});
+                inputCells.updateAll({color: 0xFFFFFF});
 
-                inputCells.update(0, 0, 0, {color: 1});
-                inputCells.update(inputCells.getX() - 1, inputCells.getY() - 1, inputCells.getZ() - 1, {color: 2});
+                spCells.update(0, 0, 0, {color: 0xFFFF00});
+                spCells.update(spCells.getX() - 1, spCells.getY() - 1, spCells.getZ() - 1, {color: 0xFF0000});
+
+                inputCells.update(0, 0, 0, {color: 0xFFFF00});
+                inputCells.update(inputCells.getX() - 1, inputCells.getY() - 1, inputCells.getZ() - 1, {color: 0xFF0000});
 
                 // Renders the canvas with empty cells into the DOM and canvas.
                 cellviz.render({
@@ -67,7 +52,7 @@
                     console.log(cellData);
                     if (cellData.type == 'inputCells') cells = inputCells;
                     else cells = spCells;
-                    cells.update(cellData.x, cellData.y, cellData.z, {color: 1});
+                    cells.update(cellData.x, cellData.y, cellData.z, {color: 0xFFFF00});
                     cellviz.redraw();
                 }
 
@@ -95,7 +80,8 @@
                 	}
                 }
 
-                document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+                var canvas = document.getElementsByTagName('canvas')[0];
+                canvas.addEventListener( 'mousedown', onDocumentMouseDown, false );
 
             });
 

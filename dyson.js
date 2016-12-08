@@ -27,19 +27,6 @@ var TrackballControls = require('three-trackballcontrols');
 var ColladaLoader = require('three-collada-loader');
 
 
-// I don't want to restrict what can be stored inside an HtmCell, so this will
-// keep it generic for now (client knows how to load / unload the cell value).
-function htmCellValueToColor(cellValue, colors) {
-    var color = colors[cellValue.color];
-    if (color == undefined) {
-        throw new Error(
-            'Cannot convert cell value "' + cellValue + '" into a color.' +
-            'Known colors are: \n' + JSON.stringify(colors, null, 2)
-        );
-    }
-    return color;
-}
-
 function getOffsetCenterPosition(cells, spacing) {
     return {
         x: 0 - (cells.getX() * spacing) / 2,
@@ -54,7 +41,7 @@ function getOffsetCenterPosition(cells, spacing) {
 
 /**
  *
- * @param opts (Object) Can contain 'geometry', 'spacing', 'colors', 'elementId'
+ * @param opts (Object) Can contain 'geometry', 'spacing', 'elementId'
  * @constructor
  */
 function BaseGridVisualization(opts) {
@@ -62,7 +49,6 @@ function BaseGridVisualization(opts) {
 
     this.geometry = opts.geometry;
     this.spacing = opts.spacing;
-    this.colors = opts.colors;
     this.width = undefined;
     this.height = undefined;
     this.$container = undefined;
@@ -84,14 +70,6 @@ function BaseGridVisualization(opts) {
     // Use a default spacing.
     if (! this.spacing) {
         this.spacing = 1.25;
-    }
-    // Use default colors;
-    if (! this.colors) {
-        this.colors = {
-            0: 0xffffff, // white
-            1: 0xffff00, // yellow
-            2: 0xff0000  // red
-        };
     }
 
     this._setupContainer(opts.elementId);
@@ -155,7 +133,6 @@ BaseGridVisualization.prototype._setupScene = function() {
 BaseGridVisualization.prototype._createMeshCells =
 function(cells, grid, position, type) {
     var scene = this.scene;
-    var colors = this.colors;
     var meshCells = [];
     var spacing = this.spacing;
     var layerSpacing = this.layerSpacing;
@@ -171,7 +148,7 @@ function(cells, grid, position, type) {
             for (var cz = 0; cz < z; cz++) {
                 cellValue = cells.getCellValue(cx, cy, cz);
                 material = new THREE.MeshLambertMaterial({
-                    color: htmCellValueToColor(cellValue, colors)
+                    color: cellValue.color
                 });
                 cube = new THREE.Mesh(this.geometry, material);
                 cube.position.x = position.x + spacing * cx;
@@ -200,7 +177,6 @@ function(cells, grid, position, type) {
  * This function should only be called when the cells change.
  */
 BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells, position) {
-    var colors = this.colors;
     var cube, cellValue;
     var spacing = this.spacing;
     for (var cx = 0; cx < cells.getX(); cx++) {
@@ -208,9 +184,7 @@ BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells, pos
             for (var cz = 0; cz < cells.getZ(); cz++) {
                 cube = meshCells[cx][cy][cz];
                 cellValue = cells.getCellValue(cx, cy, cz);
-                cube.material.color = new THREE.Color(
-                    htmCellValueToColor(cellValue, colors)
-                );
+                cube.material.color = new THREE.Color(cellValue.color);
                 cube.position.x = position.x + spacing * cx;
                 cube.position.y = position.y - spacing * cy;
                 cube.position.z = position.z - spacing * cz;
@@ -235,7 +209,7 @@ BaseGridVisualization.prototype.getTargets = function() {
 /**
  *
  * @param cells (HtmCells) initial cells to render
- * @param opts (Object) Can contain 'geometry', 'spacing', 'colors', 'elementId'
+ * @param opts (Object) Can contain 'geometry', 'spacing', 'elementId'
  * @constructor
  */
 function SingleLayerVisualization(cells, opts) {
@@ -263,7 +237,7 @@ SingleLayerVisualization.prototype.render = function(opts) {
     var h = this.height;
     var grid = new THREE.Group();
 
-    var position = getOffsetCenterPosition(this.cells, this.spacing);
+    var position = this.position = getOffsetCenterPosition(this.cells, this.spacing);
 
     this.meshCells = this._createMeshCells(this.cells, grid, position);
 
@@ -309,7 +283,7 @@ SingleLayerVisualization.prototype.render = function(opts) {
 };
 
 SingleLayerVisualization.prototype.redraw = function() {
-    this._applyMeshCells(this.cells, this.meshCells);
+    this._applyMeshCells(this.cells, this.meshCells, this.position);
 };
 
 /*******************************************************************************
@@ -321,7 +295,7 @@ SingleLayerVisualization.prototype.redraw = function() {
  *
  * @param inputCells (HtmCells) initial input cells to render
  * @param spColumns (HtmCells) initial SP columns to render
- * @param opts (Object) Can contain 'geometry', 'spacing', 'colors', 'elementId'
+ * @param opts (Object) Can contain 'geometry', 'spacing', 'elementId'
  * @constructor
  */
 function SpToInputVisualization(inputCells, spColumns, opts) {
@@ -493,7 +467,9 @@ HtmCells.prototype.update = function(x, y, z, value, opts) {
     var proposedValue;
     for (key in value) {
         proposedValue = value[key];
-        if (opts && opts.exclude && opts.exclude[key] && opts.exclude[key] == currentValue[key]) {
+        if (opts && opts.replace && currentValue[key] == 0) {
+
+        } else if (opts && opts.exclude && opts.exclude[key] && opts.exclude[key] == currentValue[key]) {
             // Do not overwrite.
         } else {
             currentValue[key] = proposedValue;
@@ -514,6 +490,28 @@ HtmCells.prototype.updateAll = function(value, opts) {
         }
     }
 };
+
+HtmCells.prototype.peekUpdate = function(x, y, z, callback) {
+    var me = this;
+    var currentValue = this.getCellValue(x, y, z);
+    callback(currentValue, function(value) {
+        me.update(x, y, z, value);
+    });
+};
+
+HtmCells.prototype.peekUpdateAll = function(callback) {
+    var me = this;
+    for (var cx = 0; cx < this.xdim; cx++) {
+        for (var cy = 0; cy < this.ydim; cy++) {
+            for (var cz = 0; cz < this.zdim; cz++) {
+                me.peekUpdate(cx, cy, cz, function(value, update) {
+                    callback(value, cx, cy, cz, update);
+                });
+            }
+        }
+    }
+};
+
 
 /*******************************************************************************
  * Exports.

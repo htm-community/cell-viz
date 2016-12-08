@@ -25,8 +25,6 @@
                 cells.update(0, 0, 0, {color: 1});
                 cells.update(cells.getX() - 1, cells.getY() - 1, cells.getZ() - 1, {color: 2});
 
-                colorCellsRandomly(cells);
-
                 // Renders the canvas with empty cells into the DOM and canvas.
                 cellviz.render({
                     rotation: {
@@ -39,10 +37,15 @@
                     }
                 });
 
+                colorCellsRandomly(cells);
+
                 setInterval(function() {
-                    colorCellsRandomly(cells);
+                    cells.peekUpdateAll(function(value, x, y, z, update) {
+                        var compliment = 0xffffff ^ value.color;
+                        update({color: compliment});
+                    });
                     cellviz.redraw();
-                }, 500);
+                }, 100);
 
                 function randomHexColor() {
                     return Math.floor(Math.random()*16777215);
