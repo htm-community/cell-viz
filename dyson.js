@@ -99,7 +99,6 @@ BaseGridVisualization.prototype._setupCamera = function() {
     this.camera = new THREE.PerspectiveCamera(
         25, this.width / this.height, 50, 1e7
     );
-    this.camera.position.z = this.cubeSize * 100;
 };
 
 BaseGridVisualization.prototype._setupControls = function() {
@@ -249,7 +248,6 @@ SingleLayerVisualization.prototype.render = function(opts) {
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);
-        controls.handleResize();
         innerRender();
     }, false );
 
@@ -345,7 +343,6 @@ SpToInputVisualization.prototype.render = function(opts) {
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);
-        controls.handleResize();
         innerRender();
     }, false );
 
