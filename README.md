@@ -17,4 +17,7 @@ Generate static assets:
 $ webpack
 ```
 
-See sample usage in [index.html](index.html).
+Examples
+--------
+
+Open `example1.html`, `example2.html`, or `example3.html`.

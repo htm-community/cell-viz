@@ -12,7 +12,7 @@
 
         <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
         <!-- <script src="dyson-bundle.js"></script> -->
-        <script src="https://ci.numenta.com/browse/RES-NCV-51/artifact/shared/Webpacked-dyson-bundle.js/dyson-bundle.js"></script>
+        <!-- <script src="https://ci.numenta.com/browse/RES-NCV-53/artifact/shared/Webpacked-dyson-bundle.js/dyson-bundle.js"></script> -->
         <script>
 
             $(function() {
@@ -27,16 +27,7 @@
                 cells.update(cells.getX() - 1, cells.getY() - 1, cells.getZ() - 1, {color: 2});
 
                 // Renders the canvas with empty cells into the DOM and canvas.
-                cellviz.render({
-                    rotation: {
-                        // x: 5 * Math.PI / 180,
-                        // y: 4 * Math.PI / 180,
-                        // z: 90 * Math.PI / 180
-                    },
-                    camera: {
-                        // z: 40
-                    }
-                });
+                cellviz.render();
 
                 colorCellsRandomly(cells);
 
