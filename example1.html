@@ -11,8 +11,8 @@
     <body>
 
         <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
-        <!-- <script src="dyson-bundle.js"></script> -->
-        <script src="https://ci.numenta.com/browse/RES-NCV-54/artifact/shared/Webpacked-dyson-bundle.js/dyson-bundle.js"></script>
+        <script src="dyson-bundle.js"></script>
+        <!-- <script src="https://ci.numenta.com/browse/RES-NCV-54/artifact/shared/Webpacked-dyson-bundle.js/dyson-bundle.js"></script> -->
 
         <script>
 
@@ -22,7 +22,7 @@
                 var cells = new HtmCells(10, 10, 4);
 
                 // The HtmCellVisualization object handles all interactions with the DOM.
-                var cellviz = new SingleLayerVisualization(cells);
+                var cellviz = new SingleLayerVisualization(cells, {offset: {z: -30}});
 
                 cells.update(0, 0, 0, {color: 1});
                 cells.update(cells.getX() - 1, cells.getY() - 1, cells.getZ() - 1, {color: 2});

@@ -27,11 +27,11 @@ var TrackballControls = require('three-trackballcontrols');
 var ColladaLoader = require('three-collada-loader');
 
 
-function getOffsetCenterPosition(cells, spacing, zOffset) {
+function getOffsetCenterPosition(cells, cubeSize, spacing, offset) {
     return {
-        x: 0 - (cells.getX() * spacing) / 2,
-        y: 0 + (cells.getY() * spacing) / 2,
-        z: 0 + zOffset
+        x: (offset.x * cubeSize * spacing) - (cells.getX() * cubeSize * spacing) / 2,
+        y: (offset.y * cubeSize * spacing) + (cells.getY() * cubeSize * spacing) / 2,
+        z: (offset.z * cubeSize * spacing)
     };
 }
 
@@ -80,6 +80,11 @@ function BaseGridVisualization(opts) {
     this._setupCamera();
     this._setupScene();
     this._setupControls();
+
+    this.offset = opts.offset || {};
+    if (this.offset.x == undefined) this.offset.x = 0;
+    if (this.offset.y == undefined) this.offset.y = 0;
+    if (this.offset.z == undefined) this.offset.z = - 100;
 }
 
 BaseGridVisualization.prototype._setupContainer = function(elementId) {
@@ -147,10 +152,18 @@ function(cells, grid, position, type) {
             zdim = [];
             for (var cz = 0; cz < z; cz++) {
                 cellValue = cells.getCellValue(cx, cy, cz);
-                material = new THREE.MeshLambertMaterial({
-                    color: cellValue.color
-                });
+                material = new THREE.MeshPhongMaterial( {
+                    color: cellValue.color,
+                    polygonOffset: true,
+                    polygonOffsetFactor: 1, // positive value pushes polygon further away
+                    polygonOffsetUnits: 1
+                } );
                 cube = new THREE.Mesh(this.geometry, material);
+                // wireframe
+                var geo = new THREE.EdgesGeometry( cube.geometry );
+                var mat = new THREE.LineBasicMaterial( { color: 0x333, linewidth: 1 } );
+                var wireframe = new THREE.LineSegments( geo, mat );
+                cube.add( wireframe );
                 cube.position.x = position.x + (this.cubeSize * spacing) * cx;
                 cube.position.y = position.y - (this.cubeSize * spacing) * cy;
                 cube.position.z = position.z - (this.cubeSize * spacing) * cz;
@@ -237,9 +250,8 @@ SingleLayerVisualization.prototype.render = function(opts) {
     var h = this.height;
     var grid = new THREE.Group();
 
-    this.zOffset = -((opts.initialDistance || 100) * this.cubeSize * this.spacing);
     var position = this.position = getOffsetCenterPosition(
-        this.cells, this.spacing * this.cubeSize, this.zOffset
+        this.cells, this.cubeSize, this.spacing, this.offset
     );
 
     this.meshCells = this._createMeshCells(this.cells, grid, position);
@@ -318,12 +330,11 @@ SpToInputVisualization.prototype.render = function(opts) {
     var spGrid = new THREE.Group();
 
 
-    this.zOffset = -((opts.initialDistance || 100) * this.cubeSize * this.spacing);
     this.spPosition = getOffsetCenterPosition(
-        this.spColumns, this.spacing * this.cubeSize, this.zOffset
+        this.spColumns, this.cubeSize, this.spacing, this.offset
     );
     this.inputPosition = getOffsetCenterPosition(
-        this.inputCells, this.spacing * this.cubeSize, this.zOffset
+        this.inputCells, this.cubeSize, this.spacing, this.offset
     );
     // Move the input cells away from center.
     this.inputPosition.z -= this.layerSpacing * this.cubeSize;
@@ -366,10 +377,10 @@ SpToInputVisualization.prototype.render = function(opts) {
 
 SpToInputVisualization.prototype.redraw = function() {
     this.spPosition = getOffsetCenterPosition(
-        this.spColumns, this.spacing * this.cubeSize, this.zOffset
+        this.spColumns, this.cubeSize, this.spacing, this.offset
     );
     this.inputPosition = getOffsetCenterPosition(
-        this.inputCells, this.spacing * this.cubeSize, this.zOffset
+        this.inputCells, this.cubeSize, this.spacing, this.offset
     );
     // Move away the input cells.
     this.inputPosition.z -= this.layerSpacing * this.cubeSize;

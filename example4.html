@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=utf-8>
+        <title>Cell Regions</title>
+        <style>
+            body { margin: 0; }
+            canvas { width: 100%; height: 100% }
+        </style>
+    </head>
+    <body>
+
+        <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
+        <!-- <script src="dyson-bundle.js"></script> -->
+        <script src="https://ci.numenta.com/browse/RES-NCV-54/artifact/shared/Webpacked-dyson-bundle.js/dyson-bundle.js"></script>
+
+        <script>
+
+            $(function() {
+
+                /* From http://stackoverflow.com/questions/7128675/from-green-to-red-color-depend-on-percentage */
+                function getGreenToRed(percent){
+                    var r, g;
+                    percent = 100 - percent;
+                    r = percent < 50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
+                    g = percent > 50 ? 255 : Math.floor((percent*2)*255/100);
+                    return rgbToHex(r, g, 0);
+                }
+
+                /* From http://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb */
+                function rgbToHex(r, g, b) {
+                    return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+                }
+
+                function xyzToOneDimIndex(x, y, z, xMax, yMax, zMax) {
+                    var result = (z * xMax * yMax) + (y * xMax) + x;
+                    // console.log('%s, %s, %s : %s', x, y, z, result);
+                    return result;
+                }
+
+                function colorCellsGradient(myCells) {
+                    var xMax = cells.getX();
+                    var yMax = cells.getY();
+                    var zMax = cells.getZ();
+                    var max = xMax * yMax * zMax;
+                    var index;
+                    var percent;
+                    var color;
+                    for (var cx = 0; cx < xMax; cx++) {
+                        for (var cy = 0; cy < yMax; cy++) {
+                            for (var cz = 0; cz < zMax; cz++) {
+                                index = xyzToOneDimIndex(cx, cy, cz, xMax, yMax, zMax);
+                                percent = (index / max) * 100;
+                                color = new THREE.Color('#' + getGreenToRed(percent));
+                                myCells.update(
+                                    cx, cy, cz,
+                                    {color: color}
+                                );
+                            }
+                        }
+                    }
+                }
+
+                // The Cells interface is how to update the visualization inside the canvas.
+                var cells = new HtmCells(10, 20, 4);
+
+                // The HtmCellVisualization object handles all interactions with the DOM.
+                var cellviz = new SingleLayerVisualization(cells);
+
+                colorCellsGradient(cells);
+
+                // Renders the canvas with empty cells into the DOM and canvas.
+                cellviz.render({initialDistance: 100});
+
+                setInterval(function() {
+                    colorCellsGradient(cells);
+                    cellviz.redraw();
+                }, 500);
+
+
+            });
+
+        </script>
+    </body>
+</html>

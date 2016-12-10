@@ -52,7 +52,6 @@ THREE.FlyControls = function ( object, domElement ) {
 
 		}
 
-		console.log('%s keydown', event.keyCode);
 		//event.preventDefault();
 
 		switch ( event.keyCode ) {
@@ -85,8 +84,6 @@ THREE.FlyControls = function ( object, domElement ) {
 	};
 
 	this.keyup = function( event ) {
-
-		console.log('%s keyup', event.keyCode);
 
 		switch ( event.keyCode ) {
 
