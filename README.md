@@ -17,6 +17,8 @@ Generate static assets:
 $ webpack
 ```
 
+Use `out/dyson.js`;
+
 Examples
 --------
 

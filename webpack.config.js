@@ -1,14 +1,16 @@
 module.exports = {
     entry: [
 
-        "./threejs/renderers/Projector.js",
-        "./threejs/controls/FlyControls.js",
-
-        "./dyson.js"
-
+        "./src/threejs/renderers/Projector.js",
+        "./src/threejs/controls/FlyControls.js",
+        "./src/HtmCells.js",
+        "./src/BaseGridVisualization.js",
+        "./src/SingleLayerVisualization.js",
+        "./src/SpToInputVisualization.js",
+        "./src/HtmViz.js"
     ],
     output: {
-        path: __dirname,
-        filename: "dyson-bundle.js"
+        path: __dirname + "/out",
+        filename: "dyson.js"
     }
 };
