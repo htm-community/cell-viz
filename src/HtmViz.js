@@ -230,5 +230,7 @@ HtmViz.prototype.update = function(htmData, selectedCell) {
 
 window.SingleLayerVisualization = require('./SingleLayerVisualization');
 window.SpToInputVisualization = require('./SpToInputVisualization');
+window.CompleteHtmVisualization = require('./CompleteHtmVisualization');
 window.HtmCells = require('./HtmCells');
+window.HtmMiniColumns = require('./HtmMiniColumns');
 window.THREE = require('three');

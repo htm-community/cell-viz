@@ -37,7 +37,9 @@ function BaseGridVisualization(opts) {
     }
     // Use a default spacing.
     if (! this.spacing) {
-        this.spacing = 1.25;
+        this.spacing = {
+            x: 1.4, y: 1.4, z: 1.4
+        };
     }
 
     this._setupContainer(opts.elementId);
@@ -48,7 +50,7 @@ function BaseGridVisualization(opts) {
     this.offset = opts.offset || {};
     if (this.offset.x == undefined) this.offset.x = 0;
     if (this.offset.y == undefined) this.offset.y = 0;
-    if (this.offset.z == undefined) this.offset.z = - 100;
+    if (this.offset.z == undefined) this.offset.z = 0;
 }
 
 BaseGridVisualization.prototype._setupContainer = function(elementId) {
@@ -116,30 +118,32 @@ BaseGridVisualization.prototype._createMeshCells =
                 zdim = [];
                 for (var cz = 0; cz < z; cz++) {
                     cellValue = cells.getCellValue(cx, cy, cz);
-                    material = new THREE.MeshPhongMaterial( {
-                        color: cellValue.color,
-                        polygonOffset: true,
-                        polygonOffsetFactor: 1, // positive value pushes polygon further away
-                        polygonOffsetUnits: 1
-                    } );
-                    cube = new THREE.Mesh(this.geometry, material);
-                    // wireframe
-                    var geo = new THREE.EdgesGeometry( cube.geometry );
-                    var mat = new THREE.LineBasicMaterial( { color: 0x333, linewidth: 1 } );
-                    var wireframe = new THREE.LineSegments( geo, mat );
-                    cube.add( wireframe );
-                    cube.position.x = position.x + (this.cubeSize * spacing) * cx;
-                    cube.position.y = position.y - (this.cubeSize * spacing) * cy;
-                    cube.position.z = position.z - (this.cubeSize * spacing) * cz;
-                    cube.updateMatrix();
-                    cube.matrixAutoUpdate = false;
-                    cube._cellData = {
-                        type: type, x: cx, y: cy, z: cz
-                    };
-                    grid.add(cube);
-                    zdim.push(cube);
-                    // Keep track of cubes in the grid so they can be clickable.
-                    this.targets.push(cube);
+                    if (cellValue) {
+                        material = new THREE.MeshPhongMaterial( {
+                            color: cellValue.color,
+                            polygonOffset: true,
+                            polygonOffsetFactor: 1, // positive value pushes polygon further away
+                            polygonOffsetUnits: 1
+                        } );
+                        cube = new THREE.Mesh(this.geometry, material);
+                        // wireframe
+                        var geo = new THREE.EdgesGeometry( cube.geometry );
+                        var mat = new THREE.LineBasicMaterial( { color: 0x333, linewidth: 1 } );
+                        var wireframe = new THREE.LineSegments( geo, mat );
+                        cube.add( wireframe );
+                        cube.position.x = position.x + (this.cubeSize * spacing.x) * cx;
+                        cube.position.y = position.y - (this.cubeSize * spacing.y) * cy;
+                        cube.position.z = position.z - (this.cubeSize * spacing.z) * cz;
+                        cube.updateMatrix();
+                        cube.matrixAutoUpdate = false;
+                        cube._cellData = {
+                            type: type, x: cx, y: cy, z: cz
+                        };
+                        grid.add(cube);
+                        zdim.push(cube);
+                        // Keep track of cubes in the grid so they can be clickable.
+                        this.targets.push(cube);
+                    }
                 }
                 ydim.push(zdim);
             }
@@ -161,11 +165,13 @@ BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells, pos
             for (var cz = 0; cz < cells.getZ(); cz++) {
                 cube = meshCells[cx][cy][cz];
                 cellValue = cells.getCellValue(cx, cy, cz);
-                cube.material.color = new THREE.Color(cellValue.color);
-                cube.position.x = position.x + (this.cubeSize * spacing) * cx;
-                cube.position.y = position.y - (this.cubeSize * spacing) * cy;
-                cube.position.z = position.z - (this.cubeSize * spacing) * cz;
-                cube.updateMatrix();
+                if (cellValue) {
+                    cube.material.color = new THREE.Color(cellValue.color);
+                    cube.position.x = position.x + (this.cubeSize * spacing.x) * cx;
+                    cube.position.y = position.y - (this.cubeSize * spacing.y) * cy;
+                    cube.position.z = position.z - (this.cubeSize * spacing.z) * cz;
+                    cube.updateMatrix();
+                }
             }
         }
     }
@@ -173,9 +179,9 @@ BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells, pos
 
 BaseGridVisualization.prototype.getOffsetCenterPosition = function(cells, cubeSize, spacing, offset) {
     return {
-        x: (offset.x * cubeSize * spacing) - (cells.getX() * cubeSize * spacing) / 2,
-        y: (offset.y * cubeSize * spacing) + (cells.getY() * cubeSize * spacing) / 2,
-        z: (offset.z * cubeSize * spacing)
+        x: (offset.x * cubeSize * spacing.x) - (cells.getX() * cubeSize * spacing.x) / 2,
+        y: (offset.y * cubeSize * spacing.y) + (cells.getY() * cubeSize * spacing.y) / 2,
+        z: (offset.z * cubeSize * spacing.z)
     };
 };
 
