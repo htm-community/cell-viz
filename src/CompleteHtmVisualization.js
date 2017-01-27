@@ -81,19 +81,20 @@ CompletHtmVisualization.prototype.render = function(opts) {
     var light = this.light;
     var w = this.width;
     var h = this.height;
-    var inputGrid = new THREE.Group();
-    var spGrid = new THREE.Group();
     var centerPosition = {x: 0, y: 0, z: 0};
     var cameraPosition = _.extend({}, centerPosition, this.opts.camera);
     var spacingCache;
+
+    this.spGrid = new THREE.Group();
+    this.inputGrid = new THREE.Group();
 
     this.spPosition = _.extend({}, centerPosition);
     this.inputPosition = _.extend({}, centerPosition);
     // Move the input cells away from the SP cells.
     this.inputPosition.z += this.layerSpacing * this.cubeSize;
 
-    this.spMeshCells = this._createSpCells(spGrid);
-    this.inputMeshCells = this._createInputCells(inputGrid);
+    this.spMeshCells = this._createSpCells(this.spGrid);
+    this.inputMeshCells = this._createInputCells(this.inputGrid);
 
     this._createProximalSegmentLines();
 
@@ -149,5 +150,11 @@ CompletHtmVisualization.prototype.redraw = function() {
     this._createProximalSegmentLines()
 };
 
+CompletHtmVisualization.prototype.redim = function(cellsPerRow) {
+    this.spColumns.cellsPerRow = cellsPerRow;
+    this.scene.remove(this.spGrid);
+    this.spGrid = new THREE.Group();
+    this.spMeshCells = this._createSpCells(this.spGrid);
+};
 
 module.exports = CompletHtmVisualization;
