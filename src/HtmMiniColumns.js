@@ -20,6 +20,22 @@
 # ----------------------------------------------------------------------
 */
 
+function getXyzFromIndex(idx, rx, ry, rz) {
+    var result = {};
+    var a = (rz * rx)
+    result.y = Math.floor(idx / a);
+    var b = idx - a * result.y;
+    result.x = Math.floor(b / rz);
+    result.z = b % rz;
+    return result;
+}
+
+function xyzToOneDimIndex(x, y, z, xMax, yMax, zMax) {
+    var result = (z * xMax * yMax) + (y * xMax) + x;
+    return result;
+}
+
+
 /*******************************************************************************
  * HTM Mini-Columns
  *******************************************************************************/
@@ -34,21 +50,14 @@
  */
 function HtmMiniColumns(numColumns, cellsPerColumn, opts) {
     if (!opts) opts = {};
+    var me = this;
     this.numColumns = numColumns;
     this.cellsPerColumn = cellsPerColumn;
     this.cellsPerRow = opts.cellsPerRow || 1;
-    // Create initially empty matrices.
-    this.columns = [];
-    var cells;
-    var columnCellIndex = 0;
-    var columnIndex = 0;
-    for (; columnIndex < numColumns; columnIndex++) {
-        cells = [];
-        for (; columnCellIndex < cellsPerColumn; columnCellIndex++) {
-            cells.push({color: 0});
-        }
-        this.columns.push(cells);
-    }
+    this.cells = [];
+    _.times(this.getNumberOfCells(), function() {
+        me.cells.push({color: 0});
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,22 +65,14 @@ function HtmMiniColumns(numColumns, cellsPerColumn, opts) {
 // are called by client code.
 ////////////////////////////////////////////////////////////////////////////////
 
-HtmMiniColumns.prototype.getNumColumns = function() {
-    return this.numColumns;
-};
-
-HtmMiniColumns.prototype.getCellsPerColumn = function() {
-    return this.cellsPerColumn;
-};
-
-HtmMiniColumns.prototype.getColumn = function(columnIndex) {
-    return this.columns[columnIndex];
-};
-
-HtmMiniColumns.prototype.getCell = function(cellIndex) {
-    var columnIndex = parseInt(Math.floor(cellIndex / this.numColumns));
-    var cellIndex = columnIndex * this.cellsPerColumn + cellIndex;
-    return this.columns[columnIndex][columnCellIndex];
+HtmMiniColumns.prototype.getCellXyz = function(globalCellIndex) {
+    var out = getXyzFromIndex(
+        globalCellIndex, this.getX(), this.getY(), this.getZ()
+    );
+    if (out.x >= this.getX()) throw new Error('x out of bounds');
+    if (out.y >= this.getY()) throw new Error('y out of bounds');
+    if (out.z >= this.getZ()) throw new Error('z out of bounds');
+    return out;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,26 +86,19 @@ HtmMiniColumns.prototype.getX = function() {
 };
 
 HtmMiniColumns.prototype.getY = function() {
-    return Math.ceil(this.getNumColumns() / this.cellsPerRow);
+    return Math.ceil(this.numColumns / this.cellsPerRow);
 };
 
 HtmMiniColumns.prototype.getZ = function() {
-    return this.getCellsPerColumn();
+    return this.cellsPerColumn;
 };
 
 HtmMiniColumns.prototype.getCellValue = function(x, y, z) {
-    var columnIndex = x + y * this.cellsPerRow;
-    var cellIndex = z;
-    var column = this.getColumn(columnIndex);
-    var out = undefined;
-    if (column) {
-        out = column[cellIndex];
-    }
-    // if (out) {
-    //     console.log('%s,%s,%s: %s, %s, %s', x, y, z,
-    //         out.color.r.toFixed(2), out.color.g.toFixed(2), out.color.b.toFixed(2));
-    // }
-    return out;
+    var cellIndex = xyzToOneDimIndex(
+        z, x, y,
+        this.getZ(), this.getX(), this.getY()
+    );
+    return this.cells[cellIndex];
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -112,13 +106,19 @@ HtmMiniColumns.prototype.getCellValue = function(x, y, z) {
 // cells. They use the context of the HTM structure, not xyz.
 ////////////////////////////////////////////////////////////////////////////////
 
-HtmMiniColumns.prototype.update = function(columnIndex, cellIndex, value, opts) {
-    var column = this.getColumn(columnIndex);
-    var currentValue = column[cellIndex];
-    column[cellIndex] = value;
-    // if (JSON.stringify(value) != JSON.stringify(currentValue)) {
-    //     console.log('col %s cell %s ==> was %s now %s', columnIndex, cellIndex, JSON.stringify(currentValue), JSON.stringify(value));
-    // }
+HtmMiniColumns.prototype.update = function(cellIndex, value, opts) {
+    this.cells[cellIndex] = value;
+};
+
+HtmMiniColumns.prototype.getNumberOfCells = function() {
+    return this.numColumns * this.cellsPerColumn;
+};
+
+HtmMiniColumns.prototype.getCellsInColumn = function(columnIndex) {
+    var me = this;
+    return _.filter(this.cells, function(cell, globalIndex) {
+        return me.getCellValue(cell.x, cell.y, cell.z).columnIndex == columnIndex;
+    });
 };
 
 /**
@@ -126,32 +126,10 @@ HtmMiniColumns.prototype.update = function(columnIndex, cellIndex, value, opts) 
  * @param value {*} Whatever value you want the cells to have.
  */
 HtmMiniColumns.prototype.updateAll = function(value, opts) {
-    for (var columnIndex = 0; columnIndex < this.numColumns; columnIndex++) {
-        for (var cellIndex = 0; cellIndex < this.cellsPerColumn; cellIndex++) {
-            this.update(columnIndex, cellIndex, value, opts);
-        }
-    }
+    var me = this;
+    _.times(this.getNumberOfCells(), function(cellIndex) {
+        me.update(cellIndex, value);
+    });
 };
-
-// HtmMiniColumns.prototype.peekUpdate = function(x, y, z, callback) {
-//     var me = this;
-//     var currentValue = this.getCellValue(x, y, z);
-//     callback(currentValue, function(value) {
-//         me.update(x, y, z, value);
-//     });
-// };
-//
-// HtmMiniColumns.prototype.peekUpdateAll = function(callback) {
-//     var me = this;
-//     for (var columnIndex = 0; columnIndex < this.xdim; columnIndex++) {
-//         for (var cy = 0; cy < this.ydim; cy++) {
-//             for (var cz = 0; cz < this.zdim; cz++) {
-//                 me.peekUpdate(columnIndex, cy, cz, function(value, update) {
-//                     callback(value, columnIndex, cy, cz, update);
-//                 });
-//             }
-//         }
-//     }
-// };
 
 module.exports = HtmMiniColumns;

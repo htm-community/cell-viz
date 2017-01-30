@@ -11,28 +11,28 @@ var BaseGridVisualization = require('./BaseGridVisualization');
  * @param opts (Object) Can contain 'geometry', 'spacing', 'elementId'
  * @constructor
  */
-function CompletHtmVisualization(inputCells, spColumns, opts) {
+function CompleteHtmVisualization(inputCells, spColumns, opts) {
     if (!opts) opts = {};
     this.inputCells = inputCells;
     this.spColumns = spColumns;
     this.layerSpacing = opts.layerSpacing || 30;
     this.inputMeshCells = [];
     this.spMeshCells = [];
-    this.proximalSegments = [];
-    // this.distalSegments = [];
+    this.distalSegments = [];
     this.inputSpacing = {x: 1.1, y: 1.1, z: 1.1};
+    this._selections = [];
     BaseGridVisualization.call(this, opts);
 }
-CompletHtmVisualization.prototype = Object.create(BaseGridVisualization.prototype);
-CompletHtmVisualization.prototype.constructor = BaseGridVisualization;
+CompleteHtmVisualization.prototype = Object.create(BaseGridVisualization.prototype);
+CompleteHtmVisualization.prototype.constructor = BaseGridVisualization;
 
-CompletHtmVisualization.prototype._createSpCells = function(grid) {
+CompleteHtmVisualization.prototype._createSpCells = function(grid) {
     return this._createMeshCells(
         this.spColumns, grid, this.spPosition, 'spColumns'
     );
 };
 
-CompletHtmVisualization.prototype._createInputCells = function(grid) {
+CompleteHtmVisualization.prototype._createInputCells = function(grid) {
     // We're going to use a canned spacing for input. This is a hack becuz lazy.
     var spacingCache = this.spacing;
     this.spacing = this.inputSpacing;
@@ -43,35 +43,60 @@ CompletHtmVisualization.prototype._createInputCells = function(grid) {
     return out;
 };
 
-CompletHtmVisualization.prototype._createProximalSegmentLines =
+CompleteHtmVisualization.prototype._createDistalSegmentLines =
 function() {
     var me = this;
-    if (this.proximalSegmentGrid) {
-        this.scene.remove(this.proximalSegmentGrid);
+    if (this.distalSegmentGrid) {
+        this.scene.remove(this.distalSegmentGrid);
     }
     var grid = new THREE.Group();
-    var segments = this.proximalSegments;
+    var segments = this.distalSegments;
     var material = new THREE.LineBasicMaterial({
     	color: 0x0000ff
     });
+    var meshOpacity = 1.0;
+    if (segments.length) {
+        meshOpacity = 0.3;
+    }
+    // Make all the cells transparent if there is a selection.
+    _.each(this.spMeshCells, function(meshx) {
+        _.each(meshx, function(meshz) {
+            _.each(meshz, function(mesh) {
+                mesh.material.opacity = meshOpacity;
+            });
+        });
+    });
     _.each(segments, function(segment) {
         var geometry = new THREE.Geometry();
-        var inputCube = me.inputMeshCells[segment.target][0][0];
-        geometry.vertices.push(
-            new THREE.Vector3( 0, 0, 0 ),
-        	inputCube.position
-        );
-        var line = new THREE.Line( geometry, material );
-        grid.add(line);
+        var sourceCellXyz = me.spColumns.getCellXyz(segment.source);
+        var targetCellXyz = me.spColumns.getCellXyz(segment.target);
+        console.log('%s, %s', JSON.stringify(sourceCellXyz), JSON.stringify(targetCellXyz));
+        var sourceMesh = me.spMeshCells[sourceCellXyz.x][sourceCellXyz.y][sourceCellXyz.z];
+        var targetMesh = me.spMeshCells[targetCellXyz.x][targetCellXyz.y][targetCellXyz.z];
+        if (sourceMesh && targetMesh) {
+            geometry.vertices.push(
+                sourceMesh.position,
+                targetMesh.position
+            );
+            var line = new THREE.Line( geometry, material );
+            grid.add(line);
+            sourceMesh.material.opacity = 1.0;
+            targetMesh.material.opacity = 1.0;
+        } else {
+            console.warn('Missing cells!');
+            console.warn(segment);
+            console.warn(sourceCellXyz)
+            console.warn(targetCellXyz)
+        }
     });
     this.scene.add(grid);
-    this.proximalSegmentGrid = grid;
+    this.distalSegmentGrid = grid;
 };
 
 /**
  * Called once to render the canvas into the DOM with the initial cell data.
  */
-CompletHtmVisualization.prototype.render = function(opts) {
+CompleteHtmVisualization.prototype.render = function(opts) {
     if (!opts) opts = {};
     var me = this;
     var renderer = this.renderer;
@@ -96,7 +121,7 @@ CompletHtmVisualization.prototype.render = function(opts) {
     this.spMeshCells = this._createSpCells(this.spGrid);
     this.inputMeshCells = this._createInputCells(this.inputGrid);
 
-    this._createProximalSegmentLines();
+    this._createDistalSegmentLines();
 
     camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
     // Look at the center input cell.
@@ -131,7 +156,7 @@ CompletHtmVisualization.prototype.render = function(opts) {
 
 };
 
-CompletHtmVisualization.prototype.redraw = function() {
+CompleteHtmVisualization.prototype.redraw = function() {
     this.spPosition = this.getOffsetCenterPosition(
         this.spColumns, this.cubeSize, this.spacing, this.offset
     );
@@ -147,14 +172,45 @@ CompletHtmVisualization.prototype.redraw = function() {
     this._applyMeshCells(this.inputCells, this.inputMeshCells, this.inputPosition);
     this.spacing = spacingCache;
     this._applyMeshCells(this.spColumns, this.spMeshCells, this.spPosition);
-    this._createProximalSegmentLines()
+    this._createDistalSegmentLines()
 };
 
-CompletHtmVisualization.prototype.redim = function(cellsPerRow) {
+CompleteHtmVisualization.prototype.redim = function(cellsPerRow) {
     this.spColumns.cellsPerRow = cellsPerRow;
     this.scene.remove(this.spGrid);
     this.spGrid = new THREE.Group();
     this.spMeshCells = this._createSpCells(this.spGrid);
 };
 
-module.exports = CompletHtmVisualization;
+CompleteHtmVisualization.prototype._selectCube = function(cube) {
+    // var wireframe = new THREE.LineSegments( geo, mat );
+    // this._selections[cellValue.cellIndex] = wireframe;
+    // cube.add( wireframe );
+    var outlineMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00, side: THREE.BackSide } );
+	var outlineMesh = new THREE.Mesh( cube.geometry, outlineMaterial );
+	// outlineMesh.position.set(cube.position.getPositionFromMatrix(outlineMesh.matrixWorld));
+    outlineMesh.position.set(cube.position.x, cube.position.y, cube.position.z);
+	outlineMesh.scale.multiplyScalar(1.15);
+    this._selections.push(outlineMesh);
+	this.scene.add(outlineMesh);
+};
+
+CompleteHtmVisualization.prototype._mutateCube = function(cube, cellValue, x, y, z) {
+    if (cube._cellData && cube._cellData.type == 'inputCells') return;
+    var geo = cube.geometry;
+    var selectedCell = this.spColumns.selectedCell;
+    var selectedColumn = this.spColumns.selectedColumn;
+    if ((selectedColumn && selectedColumn == cellValue.columnIndex)
+    || (selectedCell && selectedCell == cellValue.cellIndex)) {
+        this._selectCube(cube);
+    }
+};
+
+CompleteHtmVisualization.prototype._beforeApplyMeshCells = function() {
+    // Remove all selections before rendering cubes.
+    while (this._selections.length) {
+        this.scene.remove(this._selections.pop());
+    }
+};
+
+module.exports = CompleteHtmVisualization;

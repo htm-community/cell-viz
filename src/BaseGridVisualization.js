@@ -123,17 +123,26 @@ BaseGridVisualization.prototype._createMeshCells =
                             color: cellValue.color,
                             polygonOffset: true,
                             polygonOffsetFactor: 1, // positive value pushes polygon further away
-                            polygonOffsetUnits: 1
-                        } );
+                            polygonOffsetUnits: 1,
+                            transparent: true,
+                            opacity: 1.0
+                        });
+                        material.alphaTest = 0.3;
+
                         cube = new THREE.Mesh(this.geometry, material);
-                        // wireframe
                         var geo = new THREE.EdgesGeometry( cube.geometry );
-                        var mat = new THREE.LineBasicMaterial( { color: 0x333, linewidth: 1 } );
-                        var wireframe = new THREE.LineSegments( geo, mat );
-                        cube.add( wireframe );
+                        // var mat = new THREE.LineBasicMaterial( { color: 0x333, linewidth: 1 } );
+                        // var wireframe = new THREE.LineSegments( geo, mat );
+                        // cube.add( wireframe );
                         cube.position.x = position.x + (this.cubeSize * spacing.x) * cx;
                         cube.position.y = position.y - (this.cubeSize * spacing.y) * cy;
                         cube.position.z = position.z - (this.cubeSize * spacing.z) * cz;
+
+                        // Allow subclasses to mutate each cube.
+                        if (typeof(this._mutateCube) == 'function') {
+                            this._mutateCube(cube, cellValue, cx, cy, cz)
+                        }
+
                         cube.updateMatrix();
                         cube.matrixAutoUpdate = false;
                         cube._cellData = {
@@ -145,9 +154,11 @@ BaseGridVisualization.prototype._createMeshCells =
                         this.targets.push(cube);
                     }
                 }
+                // console.log('z: %s', zdim.length);
                 ydim.push(zdim);
             }
             meshCells.push(ydim);
+            // console.log('y: %s', ydim.length);
         }
         scene.add(grid);
         return meshCells;
@@ -160,6 +171,12 @@ BaseGridVisualization.prototype._createMeshCells =
 BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells, position) {
     var cube, cellValue;
     var spacing = this.spacing;
+
+    // Allow subclasses to be notified of impending update.
+    if (typeof(this._beforeApplyMeshCells) == 'function') {
+        this._beforeApplyMeshCells();
+    }
+
     for (var cx = 0; cx < cells.getX(); cx++) {
         for (var cy = 0; cy < cells.getY(); cy++) {
             for (var cz = 0; cz < cells.getZ(); cz++) {
@@ -170,6 +187,10 @@ BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells, pos
                     cube.position.x = position.x + (this.cubeSize * spacing.x) * cx;
                     cube.position.y = position.y - (this.cubeSize * spacing.y) * cy;
                     cube.position.z = position.z - (this.cubeSize * spacing.z) * cz;
+                    // Allow subclasses to mutate each cube.
+                    if (typeof(this._mutateCube) == 'function') {
+                        this._mutateCube(cube, cellValue, cx, cy, cz)
+                    }
                     cube.updateMatrix();
                 }
             }
