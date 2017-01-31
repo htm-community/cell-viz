@@ -1,5 +1,79 @@
 var BaseGridVisualization = require('./BaseGridVisualization');
 
+
+// create colored line
+// using buffer geometry
+function getColoredBufferLine ( steps, phase, geometry ) {
+
+  var vertices = geometry.vertices;
+  var segments = geometry.vertices.length;
+
+  // geometry
+  var geometry = new THREE.BufferGeometry();
+
+  // material
+  var lineMaterial = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
+
+  // attributes
+  var positions = new Float32Array( segments * 3 ); // 3 vertices per point
+  var colors = new Float32Array( segments * 3 );
+
+  var frequency = 1 /  ( steps * segments );
+  var color = new THREE.Color();
+
+  var x, y, z;
+
+  for ( var i = 0, l = segments; i < l; i ++ ) {
+
+    x = vertices[ i ].x;
+    y = vertices[ i ].y;
+    z = vertices[ i ].z;
+
+    positions[ i * 3 ] = x;
+    positions[ i * 3 + 1 ] = y;
+    positions[ i * 3 + 2 ] = z;
+
+    color.set ( makeColorGradient( i, frequency, phase ) );
+
+    colors[ i * 3 ] = color.r;
+    colors[ i * 3 + 1 ] = color.g;
+    colors[ i * 3 + 2 ] = color.b;
+
+	}
+
+  geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+  geometry.addAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) );
+
+  // line
+  var line = new THREE.Line( geometry, lineMaterial );
+
+  return line;
+
+}
+
+function makeColorGradient ( i, frequency, phase ) {
+
+  var center = 128;
+  var width = 127;
+
+  var redFrequency, grnFrequency, bluFrequency;
+ 	grnFrequency = bluFrequency = redFrequency = frequency;
+
+  var phase2 = phase + 2;
+  var phase3 = phase + 4;
+
+  var red   = Math.sin( redFrequency * i + phase ) * width + center;
+  var green = Math.sin( grnFrequency * i + phase2 ) * width + center;
+  var blue  = Math.sin( bluFrequency * i + phase3 ) * width + center;
+
+  return parseInt( '0x' + _byte2Hex( red ) + _byte2Hex( green ) + _byte2Hex( blue ) );
+}
+
+function _byte2Hex (n) {
+  var nybHexString = "0123456789ABCDEF";
+  return String( nybHexString.substr( ( n >> 4 ) & 0x0F, 1 ) ) + nybHexString.substr( n & 0x0F, 1 );
+}
+
 /*******************************************************************************
  * Input, SP, and TM.
  *******************************************************************************/
@@ -55,8 +129,9 @@ function() {
     	color: 0x0000ff
     });
     var meshOpacity = 1.0;
-    if (segments.length) {
-        meshOpacity = 0.3;
+    if (this.spColumns.selectedCell !== undefined
+    || this.spColumns.selectedColumn !== undefined) {
+        meshOpacity = 0.15;
     }
     // Make all the cells transparent if there is a selection.
     _.each(this.spMeshCells, function(meshx) {
@@ -70,7 +145,7 @@ function() {
         var geometry = new THREE.Geometry();
         var sourceCellXyz = me.spColumns.getCellXyz(segment.source);
         var targetCellXyz = me.spColumns.getCellXyz(segment.target);
-        console.log('%s, %s', JSON.stringify(sourceCellXyz), JSON.stringify(targetCellXyz));
+        // console.log('%s, %s', JSON.stringify(sourceCellXyz), JSON.stringify(targetCellXyz));
         var sourceMesh = me.spMeshCells[sourceCellXyz.x][sourceCellXyz.y][sourceCellXyz.z];
         var targetMesh = me.spMeshCells[targetCellXyz.x][targetCellXyz.y][targetCellXyz.z];
         if (sourceMesh && targetMesh) {
@@ -78,7 +153,8 @@ function() {
                 sourceMesh.position,
                 targetMesh.position
             );
-            var line = new THREE.Line( geometry, material );
+            // var line = new THREE.Line( geometry, material );
+            var line = getColoredBufferLine(0.1, 1.5, geometry);
             grid.add(line);
             sourceMesh.material.opacity = 1.0;
             targetMesh.material.opacity = 1.0;
@@ -166,13 +242,13 @@ CompleteHtmVisualization.prototype.redraw = function() {
     // Move away the input cells.
     this.inputPosition.z += this.layerSpacing * this.cubeSize;
 
+    this._createDistalSegmentLines()
     // We're going to use a canned spacing for input. This is a hack becuz lazy.
     spacingCache = this.spacing;
     this.spacing = this.inputSpacing;
     this._applyMeshCells(this.inputCells, this.inputMeshCells, this.inputPosition);
     this.spacing = spacingCache;
     this._applyMeshCells(this.spColumns, this.spMeshCells, this.spPosition);
-    this._createDistalSegmentLines()
 };
 
 CompleteHtmVisualization.prototype.redim = function(cellsPerRow) {
@@ -182,17 +258,21 @@ CompleteHtmVisualization.prototype.redim = function(cellsPerRow) {
     this.spMeshCells = this._createSpCells(this.spGrid);
 };
 
-CompleteHtmVisualization.prototype._selectCube = function(cube) {
-    // var wireframe = new THREE.LineSegments( geo, mat );
-    // this._selections[cellValue.cellIndex] = wireframe;
-    // cube.add( wireframe );
+CompleteHtmVisualization.prototype._selectCell = function(cube) {
     var outlineMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00, side: THREE.BackSide } );
 	var outlineMesh = new THREE.Mesh( cube.geometry, outlineMaterial );
-	// outlineMesh.position.set(cube.position.getPositionFromMatrix(outlineMesh.matrixWorld));
     outlineMesh.position.set(cube.position.x, cube.position.y, cube.position.z);
 	outlineMesh.scale.multiplyScalar(1.15);
     this._selections.push(outlineMesh);
 	this.scene.add(outlineMesh);
+};
+
+CompleteHtmVisualization.prototype._selectColumn = function(columnIndex) {
+    var me = this;
+    _.each(this.spColumns.getCellsInColumn(columnIndex), function(cell) {
+        var xyz = me.spColumns.getCellXyz(cell.cellIndex);
+        me._selectCell(me.spMeshCells[xyz.x][xyz.y][xyz.z]);
+    });
 };
 
 CompleteHtmVisualization.prototype._mutateCube = function(cube, cellValue, x, y, z) {
@@ -200,9 +280,10 @@ CompleteHtmVisualization.prototype._mutateCube = function(cube, cellValue, x, y,
     var geo = cube.geometry;
     var selectedCell = this.spColumns.selectedCell;
     var selectedColumn = this.spColumns.selectedColumn;
-    if ((selectedColumn && selectedColumn == cellValue.columnIndex)
-    || (selectedCell && selectedCell == cellValue.cellIndex)) {
-        this._selectCube(cube);
+    if (selectedColumn && selectedColumn == cellValue.columnIndex) {
+        this._selectColumn(cellValue.columnIndex);
+    } else if (selectedCell && selectedCell == cellValue.cellIndex) {
+        this._selectCell(cube);
     }
 };
 

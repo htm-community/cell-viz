@@ -120,14 +120,14 @@ BaseGridVisualization.prototype._createMeshCells =
                     cellValue = cells.getCellValue(cx, cy, cz);
                     if (cellValue) {
                         material = new THREE.MeshPhongMaterial( {
-                            color: cellValue.color,
+                            color: cellValue.color || cellValue.state.color,
                             polygonOffset: true,
                             polygonOffsetFactor: 1, // positive value pushes polygon further away
                             polygonOffsetUnits: 1,
                             transparent: true,
                             opacity: 1.0
                         });
-                        material.alphaTest = 0.3;
+                        material.alphaTest = 0.15;
 
                         cube = new THREE.Mesh(this.geometry, material);
                         var geo = new THREE.EdgesGeometry( cube.geometry );
@@ -183,7 +183,7 @@ BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells, pos
                 cube = meshCells[cx][cy][cz];
                 cellValue = cells.getCellValue(cx, cy, cz);
                 if (cellValue) {
-                    cube.material.color = new THREE.Color(cellValue.color);
+                    cube.material.color = new THREE.Color(cellValue.color || cellValue.state.color);
                     cube.position.x = position.x + (this.cubeSize * spacing.x) * cx;
                     cube.position.y = position.y - (this.cubeSize * spacing.y) * cy;
                     cube.position.z = position.z - (this.cubeSize * spacing.z) * cz;

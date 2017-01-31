@@ -115,9 +115,8 @@ HtmMiniColumns.prototype.getNumberOfCells = function() {
 };
 
 HtmMiniColumns.prototype.getCellsInColumn = function(columnIndex) {
-    var me = this;
-    return _.filter(this.cells, function(cell, globalIndex) {
-        return me.getCellValue(cell.x, cell.y, cell.z).columnIndex == columnIndex;
+    return _.filter(this.cells, function(cell) {
+        return cell.columnIndex == columnIndex;
     });
 };
 
