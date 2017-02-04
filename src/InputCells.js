@@ -20,49 +20,48 @@
 # ----------------------------------------------------------------------
 */
 
+function xyzToOneDimIndex(x, y, z, xMax, yMax, zMax) {
+    var result = (z * xMax * yMax) + (y * xMax) + x;
+    return result;
+}
+
 /*******************************************************************************
- * HTM Cells
+ * Input Cells
  *******************************************************************************/
 
 /**
  * This interface is used to update cell data within the SpToInputVisualization.
  * Once created, use it to update cell values.
- * @param x (int) x dimension
- * @param y (int) y dimension
- * @param z (int) z dimension
+ * @param inputDimensions (array) same as you give the SP constructor.
  * @constructor
  */
-function HtmCells(x, y, z) {
-    this.xdim = x;
-    this.ydim = y;
-    this.zdim = z;
-    this.cells = [];
+function InputCells(inputDimensions, square) {
+    this._inputDimensions = inputDimensions;
 
-    // Create initially empty matrices.
-    var ylist;
-    var zlist;
-    for (var cx = 0; cx < this.xdim; cx++) {
-        ylist = [];
-        for (var cy = 0; cy < this.ydim; cy++) {
-            zlist = [];
-            for (var cz = 0; cz < this.zdim; cz++) {
-                zlist.push({color: 0});
-            }
-            ylist.push(zlist);
-        }
-        this.cells.push(ylist);
+    // Defaults to one row.
+    this.xdim = inputDimensions[0];
+    this.ydim = 1;
+    this.zdim = 1;
+
+    if (square) {
+        this.xdim = Math.floor(Math.sqrt(this.xdim));
+        this.ydim = this.xdim;
     }
+
+    this.cells = _.map(new Array(inputDimensions[0]), function() {
+        return {color: 0};
+    });
 }
 
-HtmCells.prototype.getX = function() {
+InputCells.prototype.getX = function() {
     return this.xdim;
 };
 
-HtmCells.prototype.getY = function() {
+InputCells.prototype.getY = function() {
     return this.ydim;
 };
 
-HtmCells.prototype.getZ = function() {
+InputCells.prototype.getZ = function() {
     return this.zdim;
 };
 
@@ -73,45 +72,26 @@ HtmCells.prototype.getZ = function() {
  * @param z (int) z coordinate
  * @returns {*} whatever value was in the cell
  */
-HtmCells.prototype.getCellValue = function(x, y, z) {
-    // TODO: raise error if cell coordinates are invalid.
-    return this.cells[x][y][z];
+InputCells.prototype.getCellValue = function(x, y, z) {
+    return this.cells[xyzToOneDimIndex(x, y, z, this.xdim, this.ydim, this.zdim)];
 };
 
 /**
  * Allows user to update a cell's value.
- * @param x (int) x coordinate
- * @param y (int) y coordinate
- * @param z (int) z coordinate
  * @param value {*} should contain a color, perhaps more
  */
-HtmCells.prototype.update = function(x, y, z, value, opts) {
-    var currentValue = this.getCellValue(x, y, z);
-    var proposedValue;
-    for (var key in value) {
-        proposedValue = value[key];
-        if (opts && opts.replace && currentValue[key] == 0) {
-
-        } else if (opts && opts.exclude && opts.exclude[key] && opts.exclude[key] == currentValue[key]) {
-            // Do not overwrite.
-        } else {
-            currentValue[key] = proposedValue;
-        }
-    }
+InputCells.prototype.update = function(index, value) {
+    this.cells[index] = value;
 };
 
 /**
  * Updates all cell values to given value.
  * @param value {*} Whatever value you want the cells to have.
  */
-HtmCells.prototype.updateAll = function(value, opts) {
-    for (var cx = 0; cx < this.xdim; cx++) {
-        for (var cy = 0; cy < this.ydim; cy++) {
-            for (var cz = 0; cz < this.zdim; cz++) {
-                this.update(cx, cy, cz, value, opts);
-            }
-        }
-    }
+InputCells.prototype.updateAll = function(value, opts) {
+    this.cells = _.map(new Array(this._inputDimensions[0]), function() {
+        return value;
+    });
 };
 
-module.exports = HtmCells;
+module.exports = InputCells;

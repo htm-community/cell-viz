@@ -21,40 +21,16 @@
                 var cells = new HtmCells(10, 10, 4);
 
                 // The HtmCellVisualization object handles all interactions with the DOM.
-                var cellviz = new SingleLayerVisualization(cells);
+                var cellviz = new SingleLayerVisualization(cells, {spacing: 1.4});
 
-                cells.update(0, 0, 0, {color: 1});
-                cells.update(cells.getX() - 1, cells.getY() - 1, cells.getZ() - 1, {color: 2});
+                // cells.update(0, 0, 0, {color: 1});
+                // cells.update(cells.getX() - 1, cells.getY() - 1, cells.getZ() - 1, {color: 2});
+
+                cells.updateAll({color: 0xFFFFFF});
 
                 // Renders the canvas with empty cells into the DOM and canvas.
                 cellviz.render();
 
-                colorCellsRandomly(cells);
-
-                setInterval(function() {
-                    cells.peekUpdateAll(function(value, x, y, z, update) {
-                        var compliment = 0xffffff ^ value.color;
-                        update({color: compliment});
-                    });
-                    cellviz.redraw();
-                }, 100);
-
-                function randomHexColor() {
-                    return Math.floor(Math.random()*16777215);
-                }
-
-                function colorCellsRandomly(myCells) {
-                    for (var cx = 0; cx < cells.getX(); cx++) {
-                        for (var cy = 0; cy < cells.getY(); cy++) {
-                            for (var cz = 0; cz < cells.getZ(); cz++) {
-                                myCells.update(
-                                    cx, cy, cz,
-                                    {color: randomHexColor()}
-                                );
-                            }
-                        }
-                    }
-                }
 
             });
 

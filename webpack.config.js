@@ -4,6 +4,7 @@ module.exports = {
         "./src/threejs/renderers/Projector.js",
         "./src/threejs/controls/FlyControls.js",
         "./src/HtmCells.js",
+        "./src/InputCells.js",
         "./src/HtmMiniColumns.js",
         "./src/BaseGridVisualization.js",
         "./src/SingleLayerVisualization.js",
