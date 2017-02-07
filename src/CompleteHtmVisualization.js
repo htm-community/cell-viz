@@ -93,6 +93,7 @@ function CompleteHtmVisualization(inputCells, spColumns, opts) {
     this.inputMeshCells = [];
     this.spMeshCells = [];
     this.distalSegments = [];
+    this.proximalSegments = [];
     this.inputSpacing = {x: 1.1, y: 1.1, z: 1.1};
     this._selections = [];
     BaseGridVisualization.call(this, opts);
@@ -117,23 +118,31 @@ CompleteHtmVisualization.prototype._createInputCells = function(grid) {
     return out;
 };
 
-CompleteHtmVisualization.prototype._createDistalSegmentLines =
+CompleteHtmVisualization.prototype._createSegmentLines =
 function() {
     var me = this;
-    if (this.distalSegmentGrid) {
-        this.scene.remove(this.distalSegmentGrid);
+    if (this.dSegmentGrid) {
+        this.scene.remove(this.dSegmentGrid);
     }
-    var grid = new THREE.Group();
-    var segments = this.distalSegments;
+    var dSegmentGrid = new THREE.Group();
+    var dSegments = this.distalSegments;
+
+    if (this.proximalSegmentGrid) {
+        this.scene.remove(this.proximalSegmentGrid);
+    }
+    var pSegmentGrid = new THREE.Group();
+    var pSegments = this.proximalSegments;
+
     var material = new THREE.LineBasicMaterial({
     	color: 0x0000ff
     });
     var meshOpacity = 1.0;
-    if (this.spColumns.selectedCell !== undefined
-    || this.spColumns.selectedColumn !== undefined) {
+    // Make all the cells transparent if there is a selection.
+    if (this.inputCells.selectedCell !== undefined
+        || this.spColumns.selectedCell !== undefined
+        || this.spColumns.selectedColumn !== undefined) {
         meshOpacity = 0.15;
     }
-    // Make all the cells transparent if there is a selection.
     _.each(this.spMeshCells, function(meshx) {
         _.each(meshx, function(meshz) {
             _.each(meshz, function(mesh) {
@@ -141,7 +150,11 @@ function() {
             });
         });
     });
-    _.each(segments, function(segment) {
+
+    // TODO: ^^^ I might have to do the same for input mesh cells
+
+    // Go distal!
+    _.each(dSegments, function(segment) {
         var geometry = new THREE.Geometry();
         var sourceCellXyz = me.spColumns.getCellXyz(segment.source);
         var targetCellXyz = me.spColumns.getCellXyz(segment.target);
@@ -153,9 +166,8 @@ function() {
                 sourceMesh.position,
                 targetMesh.position
             );
-            // var line = new THREE.Line( geometry, material );
             var line = getColoredBufferLine(0.1, 1.5, geometry);
-            grid.add(line);
+            dSegmentGrid.add(line);
             sourceMesh.material.opacity = 1.0;
             targetMesh.material.opacity = 1.0;
         } else {
@@ -165,9 +177,43 @@ function() {
             console.warn(targetCellXyz)
         }
     });
-    this.scene.add(grid);
-    this.distalSegmentGrid = grid;
+    this.scene.add(dSegmentGrid);
+    this.dSegmentGrid = dSegmentGrid;
+
+    // Go proximal!
+    _.each(pSegments, function(segment) {
+        var geometry = new THREE.Geometry();
+        var columnIndex = segment.source;
+        var spCellIndex = me.spColumns.getCellsInColumn(columnIndex)[0].cellIndex;
+        var sourceCellXyz = me.spColumns.getCellXyz(spCellIndex);
+        var sourceCellIndex = me.spColumns.getCellIndex(
+            sourceCellXyz.x, sourceCellXyz.y, sourceCellXyz.z
+        );
+        var sourceMesh = me.spMeshCells[sourceCellXyz.x][sourceCellXyz.y][sourceCellXyz.z];
+
+        var targetCellXyz = me.inputCells.getCellXyz(segment.target);
+        var targetMesh = me.inputMeshCells[targetCellXyz.x][targetCellXyz.y][targetCellXyz.z];
+
+        if (sourceMesh && targetMesh) {
+            geometry.vertices.push(
+                sourceMesh.position,
+                targetMesh.position
+            );
+            var line = getColoredBufferLine(0.1, 1.5, geometry);
+            pSegmentGrid.add(line);
+            sourceMesh.material.opacity = 1.0;
+            targetMesh.material.opacity = 1.0;
+        } else {
+            console.warn('Missing cells!');
+            console.warn(segment);
+            console.warn(sourceCellXyz)
+            console.warn(targetCellXyz)
+        }
+    });
+    this.scene.add(pSegmentGrid);
+    this.dSegmentGrid = pSegmentGrid;
 };
+
 
 /**
  * Called once to render the canvas into the DOM with the initial cell data.
@@ -197,7 +243,7 @@ CompleteHtmVisualization.prototype.render = function(opts) {
     this.spMeshCells = this._createSpCells(this.spGrid);
     this.inputMeshCells = this._createInputCells(this.inputGrid);
 
-    this._createDistalSegmentLines();
+    this._createSegmentLines();
 
     camera.position.set(cameraPosition.x, cameraPosition.y, cameraPosition.z);
     // Look at the center input cell.
@@ -242,7 +288,7 @@ CompleteHtmVisualization.prototype.redraw = function() {
     // Move away the input cells.
     this.inputPosition.z += this.layerSpacing * this.cubeSize;
 
-    this._createDistalSegmentLines()
+    this._createSegmentLines()
     // We're going to use a canned spacing for input. This is a hack becuz lazy.
     spacingCache = this.spacing;
     this.spacing = this.inputSpacing;
@@ -276,14 +322,20 @@ CompleteHtmVisualization.prototype._selectColumn = function(columnIndex) {
 };
 
 CompleteHtmVisualization.prototype._mutateCube = function(cube, cellValue, x, y, z) {
-    if (cube._cellData && cube._cellData.type == 'inputCells') return;
     var geo = cube.geometry;
-    var selectedCell = this.spColumns.selectedCell;
-    var selectedColumn = this.spColumns.selectedColumn;
-    if (selectedColumn && selectedColumn == cellValue.columnIndex) {
-        this._selectColumn(cellValue.columnIndex);
-    } else if (selectedCell && selectedCell == cellValue.cellIndex) {
-        this._selectCell(cube);
+    if (cube._cellData && cube._cellData.type == 'inputCells') {
+        console.log('%s == %s ?', this.inputCells.selectedCell, cellValue.cellIndex);
+        if (this.inputCells.selectedCell == cellValue.cellIndex) {
+            this._selectCell(cube);
+        }
+    } else {
+        var selectedCell = this.spColumns.selectedCell;
+        var selectedColumn = this.spColumns.selectedColumn;
+        if (selectedColumn && selectedColumn == cellValue.columnIndex) {
+            this._selectColumn(cellValue.columnIndex);
+        } else if (selectedCell && selectedCell == cellValue.cellIndex) {
+            this._selectCell(cube);
+        }
     }
 };
 

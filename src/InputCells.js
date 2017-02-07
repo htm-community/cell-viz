@@ -25,6 +25,17 @@ function xyzToOneDimIndex(x, y, z, xMax, yMax, zMax) {
     return result;
 }
 
+function getXyzFromIndex(idx, rx, ry, rz) {
+    var result = {};
+    var a = (rz * rx)
+    result.y = Math.floor(idx / a);
+    var b = idx - a * result.y;
+    result.x = Math.floor(b / rz);
+    result.z = b % rz;
+    return result;
+}
+
+
 /*******************************************************************************
  * Input Cells
  *******************************************************************************/
@@ -48,8 +59,8 @@ function InputCells(inputDimensions, square) {
         this.ydim = this.xdim;
     }
 
-    this.cells = _.map(new Array(inputDimensions[0]), function() {
-        return {color: 0};
+    this.cells = _.map(new Array(inputDimensions[0]), function(i) {
+        return {color: 0, cellIndex: i};
     });
 }
 
@@ -63,6 +74,16 @@ InputCells.prototype.getY = function() {
 
 InputCells.prototype.getZ = function() {
     return this.zdim;
+};
+
+InputCells.prototype.getCellXyz = function(cellIndex) {
+    var out = getXyzFromIndex(
+        cellIndex, this.getX(), this.getY(), this.getZ()
+    );
+    if (out.x >= this.getX()) throw new Error('x out of bounds');
+    if (out.y >= this.getY()) throw new Error('y out of bounds');
+    if (out.z >= this.getZ()) throw new Error('z out of bounds');
+    return out;
 };
 
 /**

@@ -94,11 +94,14 @@ HtmMiniColumns.prototype.getZ = function() {
 };
 
 HtmMiniColumns.prototype.getCellValue = function(x, y, z) {
-    var cellIndex = xyzToOneDimIndex(
+    return this.cells[this.getCellIndex(x, y, z)];
+};
+
+HtmMiniColumns.prototype.getCellIndex = function(x, y, z) {
+    return xyzToOneDimIndex(
         z, x, y,
         this.getZ(), this.getX(), this.getY()
     );
-    return this.cells[cellIndex];
 };
 
 ////////////////////////////////////////////////////////////////////////////////
