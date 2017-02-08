@@ -12,7 +12,9 @@ function getColoredBufferLine ( steps, phase, geometry ) {
   var geometry = new THREE.BufferGeometry();
 
   // material
-  var lineMaterial = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
+  var lineMaterial = new THREE.LineBasicMaterial({
+      vertexColors: THREE.VertexColors
+  });
 
   // attributes
   var positions = new Float32Array( segments * 3 ); // 3 vertices per point
@@ -41,8 +43,8 @@ function getColoredBufferLine ( steps, phase, geometry ) {
 
 	}
 
-  geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
-  geometry.addAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) );
+  geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
 
   // line
   var line = new THREE.Line( geometry, lineMaterial );
@@ -66,12 +68,13 @@ function makeColorGradient ( i, frequency, phase ) {
   var green = Math.sin( grnFrequency * i + phase2 ) * width + center;
   var blue  = Math.sin( bluFrequency * i + phase3 ) * width + center;
 
-  return parseInt( '0x' + _byte2Hex( red ) + _byte2Hex( green ) + _byte2Hex( blue ) );
+  return parseInt('0x' + _byte2Hex(red) + _byte2Hex(green) + _byte2Hex(blue));
 }
 
 function _byte2Hex (n) {
   var nybHexString = "0123456789ABCDEF";
-  return String( nybHexString.substr( ( n >> 4 ) & 0x0F, 1 ) ) + nybHexString.substr( n & 0x0F, 1 );
+  return String(nybHexString.substr((n >> 4) & 0x0F, 1))
+    + nybHexString.substr(n & 0x0F, 1);
 }
 
 /*******************************************************************************
@@ -127,8 +130,8 @@ function() {
     var dSegmentGrid = new THREE.Group();
     var dSegments = this.distalSegments;
 
-    if (this.proximalSegmentGrid) {
-        this.scene.remove(this.proximalSegmentGrid);
+    if (this.pSegmentGrid) {
+        this.scene.remove(this.pSegmentGrid);
     }
     var pSegmentGrid = new THREE.Group();
     var pSegments = this.proximalSegments;
@@ -143,15 +146,17 @@ function() {
         || this.spColumns.selectedColumn !== undefined) {
         meshOpacity = 0.15;
     }
-    _.each(this.spMeshCells, function(meshx) {
-        _.each(meshx, function(meshz) {
-            _.each(meshz, function(mesh) {
-                mesh.material.opacity = meshOpacity;
+
+    // Make cubes transparent unless they are connected to a segment.
+    _.each([this.spMeshCells, this.inputMeshCells], function(meshCells) {
+        _.each(meshCells, function(meshx) {
+            _.each(meshx, function(meshz) {
+                _.each(meshz, function(mesh) {
+                    mesh.material.opacity = meshOpacity;
+                });
             });
         });
     });
-
-    // TODO: ^^^ I might have to do the same for input mesh cells
 
     // Go distal!
     _.each(dSegments, function(segment) {
@@ -183,8 +188,7 @@ function() {
     // Go proximal!
     _.each(pSegments, function(segment) {
         var geometry = new THREE.Geometry();
-        var columnIndex = segment.source;
-        var spCellIndex = me.spColumns.getCellsInColumn(columnIndex)[0].cellIndex;
+        var spCellIndex = segment.source;
         var sourceCellXyz = me.spColumns.getCellXyz(spCellIndex);
         var sourceCellIndex = me.spColumns.getCellIndex(
             sourceCellXyz.x, sourceCellXyz.y, sourceCellXyz.z
@@ -211,7 +215,7 @@ function() {
         }
     });
     this.scene.add(pSegmentGrid);
-    this.dSegmentGrid = pSegmentGrid;
+    this.pSegmentGrid = pSegmentGrid;
 };
 
 
@@ -324,7 +328,7 @@ CompleteHtmVisualization.prototype._selectColumn = function(columnIndex) {
 CompleteHtmVisualization.prototype._mutateCube = function(cube, cellValue, x, y, z) {
     var geo = cube.geometry;
     if (cube._cellData && cube._cellData.type == 'inputCells') {
-        console.log('%s == %s ?', this.inputCells.selectedCell, cellValue.cellIndex);
+        // console.log('%s == %s ?', this.inputCells.selectedCell, cellValue.cellIndex);
         if (this.inputCells.selectedCell == cellValue.cellIndex) {
             this._selectCell(cube);
         }
