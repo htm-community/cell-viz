@@ -317,7 +317,10 @@ CompleteHtmVisualization.prototype.redim = function(cellsPerRow) {
 };
 
 CompleteHtmVisualization.prototype._selectCell = function(cube) {
-    var outlineMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00, side: THREE.BackSide } );
+    var outlineMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        side: THREE.BackSide
+    });
 	var outlineMesh = new THREE.Mesh( cube.geometry, outlineMaterial );
     outlineMesh.position.set(cube.position.x, cube.position.y, cube.position.z);
 	outlineMesh.scale.multiplyScalar(1.15);
