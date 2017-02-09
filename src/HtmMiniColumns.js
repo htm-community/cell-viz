@@ -109,8 +109,15 @@ HtmMiniColumns.prototype.getCellIndex = function(x, y, z) {
 // cells. They use the context of the HTM structure, not xyz.
 ////////////////////////////////////////////////////////////////////////////////
 
-HtmMiniColumns.prototype.update = function(cellIndex, value, opts) {
-    this.cells[cellIndex] = value;
+HtmMiniColumns.prototype.update = function(cellIndex, value) {
+    var currentValue = this.cells[cellIndex];
+    var proposedValue;
+    for (var key in value) {
+        proposedValue = value[key];
+        if (proposedValue !== currentValue[key]) {
+            currentValue[key] = proposedValue;
+        }
+    }
 };
 
 HtmMiniColumns.prototype.getNumberOfCells = function() {
@@ -127,7 +134,7 @@ HtmMiniColumns.prototype.getCellsInColumn = function(columnIndex) {
  * Updates all cell values to given value.
  * @param value {*} Whatever value you want the cells to have.
  */
-HtmMiniColumns.prototype.updateAll = function(value, opts) {
+HtmMiniColumns.prototype.updateAll = function(value) {
     var me = this;
     _.times(this.getNumberOfCells(), function(cellIndex) {
         me.update(cellIndex, value);

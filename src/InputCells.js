@@ -59,7 +59,7 @@ function InputCells(inputDimensions, square) {
         this.ydim = this.xdim;
     }
 
-    this.cells = _.map(new Array(inputDimensions[0]), function(i) {
+    this.cells = _.map(new Array(inputDimensions[0]), function(x, i) {
         return {color: 0, cellIndex: i};
     });
 }
@@ -102,16 +102,24 @@ InputCells.prototype.getCellValue = function(x, y, z) {
  * @param value {*} should contain a color, perhaps more
  */
 InputCells.prototype.update = function(index, value) {
-    this.cells[index] = value;
+    var currentValue = this.cells[index];
+    var proposedValue;
+    for (var key in value) {
+        proposedValue = value[key];
+        if (proposedValue !== currentValue[key]) {
+            currentValue[key] = proposedValue;
+        }
+    }
 };
 
 /**
  * Updates all cell values to given value.
  * @param value {*} Whatever value you want the cells to have.
  */
-InputCells.prototype.updateAll = function(value, opts) {
-    this.cells = _.map(new Array(this._inputDimensions[0]), function() {
-        return value;
+InputCells.prototype.updateAll = function(value) {
+    var me = this;
+    _.times(this.cells.length, function(cellIndex) {
+        me.update(cellIndex, value);
     });
 };
 

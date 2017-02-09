@@ -172,11 +172,6 @@ BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells, pos
     var cube, cellValue;
     var spacing = this.spacing;
 
-    // Allow subclasses to be notified of impending update.
-    if (typeof(this._beforeApplyMeshCells) == 'function') {
-        this._beforeApplyMeshCells();
-    }
-
     for (var cx = 0; cx < cells.getX(); cx++) {
         for (var cy = 0; cy < cells.getY(); cy++) {
             for (var cz = 0; cz < cells.getZ(); cz++) {
@@ -205,7 +200,6 @@ BaseGridVisualization.prototype.getOffsetCenterPosition = function(cells, cubeSi
         z: (offset.z * cubeSize * spacing.z)
     };
 };
-
 
 /*
  * Gets clickable cubes in the grids. See example2.html.

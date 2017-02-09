@@ -7,9 +7,9 @@ module.exports = {
         "./src/InputCells.js",
         "./src/HtmMiniColumns.js",
         "./src/BaseGridVisualization.js",
+        "./src/CompleteHtmVisualization.js",
         "./src/SingleLayerVisualization.js",
         "./src/SpToInputVisualization.js",
-        "./src/CompleteHtmVisualization.js",
         "./src/HtmViz.js"
     ],
     output: {

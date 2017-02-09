@@ -20,10 +20,11 @@
 # ----------------------------------------------------------------------
 */
 
+window.THREE = require('three');
+window.HtmCellStates = require('./HtmCellStates');
 window.SingleLayerVisualization = require('./SingleLayerVisualization');
 window.SpToInputVisualization = require('./SpToInputVisualization');
 window.CompleteHtmVisualization = require('./CompleteHtmVisualization');
 window.HtmCells = require('./HtmCells');
 window.InputCells = require('./InputCells');
 window.HtmMiniColumns = require('./HtmMiniColumns');
-window.THREE = require('three');

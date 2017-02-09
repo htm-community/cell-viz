@@ -296,9 +296,17 @@ CompleteHtmVisualization.prototype.redraw = function() {
     // We're going to use a canned spacing for input. This is a hack becuz lazy.
     spacingCache = this.spacing;
     this.spacing = this.inputSpacing;
-    this._applyMeshCells(this.inputCells, this.inputMeshCells, this.inputPosition);
+    // Remove all selected cell meshes.
+    while (this._selections.length) {
+        this.scene.remove(this._selections.pop());
+    }
+    this._applyMeshCells(
+        this.inputCells, this.inputMeshCells, this.inputPosition
+    );
     this.spacing = spacingCache;
-    this._applyMeshCells(this.spColumns, this.spMeshCells, this.spPosition);
+    this._applyMeshCells(
+        this.spColumns, this.spMeshCells, this.spPosition
+    );
 };
 
 CompleteHtmVisualization.prototype.redim = function(cellsPerRow) {
@@ -325,10 +333,10 @@ CompleteHtmVisualization.prototype._selectColumn = function(columnIndex) {
     });
 };
 
-CompleteHtmVisualization.prototype._mutateCube = function(cube, cellValue, x, y, z) {
+CompleteHtmVisualization.prototype._mutateCube =
+function(cube, cellValue, x, y, z) {
     var geo = cube.geometry;
     if (cube._cellData && cube._cellData.type == 'inputCells') {
-        // console.log('%s == %s ?', this.inputCells.selectedCell, cellValue.cellIndex);
         if (this.inputCells.selectedCell == cellValue.cellIndex) {
             this._selectCell(cube);
         }
@@ -340,13 +348,6 @@ CompleteHtmVisualization.prototype._mutateCube = function(cube, cellValue, x, y,
         } else if (selectedCell && selectedCell == cellValue.cellIndex) {
             this._selectCell(cube);
         }
-    }
-};
-
-CompleteHtmVisualization.prototype._beforeApplyMeshCells = function() {
-    // Remove all selections before rendering cubes.
-    while (this._selections.length) {
-        this.scene.remove(this._selections.pop());
     }
 };
 

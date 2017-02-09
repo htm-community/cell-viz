@@ -85,16 +85,12 @@ HtmCells.prototype.getCellValue = function(x, y, z) {
  * @param z (int) z coordinate
  * @param value {*} should contain a color, perhaps more
  */
-HtmCells.prototype.update = function(x, y, z, value, opts) {
+HtmCells.prototype.update = function(x, y, z, value) {
     var currentValue = this.getCellValue(x, y, z);
     var proposedValue;
     for (var key in value) {
         proposedValue = value[key];
-        if (opts && opts.replace && currentValue[key] == 0) {
-
-        } else if (opts && opts.exclude && opts.exclude[key] && opts.exclude[key] == currentValue[key]) {
-            // Do not overwrite.
-        } else {
+        if (proposedValue !== currentValue[key]) {
             currentValue[key] = proposedValue;
         }
     }
@@ -104,11 +100,11 @@ HtmCells.prototype.update = function(x, y, z, value, opts) {
  * Updates all cell values to given value.
  * @param value {*} Whatever value you want the cells to have.
  */
-HtmCells.prototype.updateAll = function(value, opts) {
+HtmCells.prototype.updateAll = function(value) {
     for (var cx = 0; cx < this.xdim; cx++) {
         for (var cy = 0; cy < this.ydim; cy++) {
             for (var cz = 0; cz < this.zdim; cz++) {
-                this.update(cx, cy, cz, value, opts);
+                this.update(cx, cy, cz, value);
             }
         }
     }
