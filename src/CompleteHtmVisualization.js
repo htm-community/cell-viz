@@ -1,80 +1,22 @@
 var BaseGridVisualization = require('./BaseGridVisualization');
 
-
-// create colored line
-// using buffer geometry
-function getColoredBufferLine ( steps, phase, geometry ) {
-
-  var vertices = geometry.vertices;
-  var segments = geometry.vertices.length;
-
-  // geometry
-  var geometry = new THREE.BufferGeometry();
-
-  // material
-  var lineMaterial = new THREE.LineBasicMaterial({
-      vertexColors: THREE.VertexColors
-  });
-
-  // attributes
-  var positions = new Float32Array( segments * 3 ); // 3 vertices per point
-  var colors = new Float32Array( segments * 3 );
-
-  var frequency = 1 /  ( steps * segments );
-  var color = new THREE.Color();
-
-  var x, y, z;
-
-  for ( var i = 0, l = segments; i < l; i ++ ) {
-
-    x = vertices[ i ].x;
-    y = vertices[ i ].y;
-    z = vertices[ i ].z;
-
-    positions[ i * 3 ] = x;
-    positions[ i * 3 + 1 ] = y;
-    positions[ i * 3 + 2 ] = z;
-
-    color.set ( makeColorGradient( i, frequency, phase ) );
-
-    colors[ i * 3 ] = color.r;
-    colors[ i * 3 + 1 ] = color.g;
-    colors[ i * 3 + 2 ] = color.b;
-
-	}
-
-  geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-  // line
-  var line = new THREE.Line( geometry, lineMaterial );
-
-  return line;
-
-}
-
-function makeColorGradient ( i, frequency, phase ) {
-
-  var center = 128;
-  var width = 127;
-
-  var redFrequency, grnFrequency, bluFrequency;
- 	grnFrequency = bluFrequency = redFrequency = frequency;
-
-  var phase2 = phase + 2;
-  var phase3 = phase + 4;
-
-  var red   = Math.sin( redFrequency * i + phase ) * width + center;
-  var green = Math.sin( grnFrequency * i + phase2 ) * width + center;
-  var blue  = Math.sin( bluFrequency * i + phase3 ) * width + center;
-
-  return parseInt('0x' + _byte2Hex(red) + _byte2Hex(green) + _byte2Hex(blue));
-}
-
-function _byte2Hex (n) {
-  var nybHexString = "0123456789ABCDEF";
-  return String(nybHexString.substr((n >> 4) & 0x0F, 1))
-    + nybHexString.substr(n & 0x0F, 1);
+function createSegmentLine(geometry, permanence, connected, lineWidth) {
+    var percent = permanence * 100;
+    var r = percent < 50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
+    var g = percent > 50 ? 255 : Math.floor((percent*2)*255/100);
+    var color = new THREE.Color(r, g, 0);
+    var material;
+    if (connected) {
+        var material = new THREE.LineBasicMaterial({
+        	color: color, linewidth: lineWidth
+        });
+    } else {
+        geometry.computeLineDistances();
+        var material = new THREE.LineDashedMaterial({
+        	color: color, dashSize: 21, gapSize: 9, linewidth: lineWidth
+        });
+    }
+    return new THREE.Line( geometry, material );
 }
 
 /*******************************************************************************
@@ -171,7 +113,9 @@ function() {
                 sourceMesh.position,
                 targetMesh.position
             );
-            var line = getColoredBufferLine(0.1, 1.5, geometry);
+            var line = createSegmentLine(
+                geometry, segment.permanence, segment.connected, 3
+            );
             dSegmentGrid.add(line);
             sourceMesh.material.opacity = 1.0;
             targetMesh.material.opacity = 1.0;
@@ -203,7 +147,7 @@ function() {
                 sourceMesh.position,
                 targetMesh.position
             );
-            var line = getColoredBufferLine(0.1, 1.5, geometry);
+            var line = createSegmentLine(geometry, undefined, true, 1);
             pSegmentGrid.add(line);
             sourceMesh.material.opacity = 1.0;
             targetMesh.material.opacity = 1.0;
