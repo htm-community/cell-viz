@@ -1,22 +1,25 @@
 var BaseGridVisualization = require('./BaseGridVisualization');
 
-function createSegmentLine(geometry, permanence, connected, lineWidth) {
-    var percent = permanence * 100;
-    var r = percent < 50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
-    var g = percent > 50 ? 255 : Math.floor((percent*2)*255/100);
-    var color = new THREE.Color(r, g, 0);
-    var material;
-    if (connected) {
-        var material = new THREE.LineBasicMaterial({
-        	color: color, linewidth: lineWidth
-        });
-    } else {
-        geometry.computeLineDistances();
-        var material = new THREE.LineDashedMaterial({
-        	color: color, dashSize: 21, gapSize: 9, linewidth: lineWidth
-        });
-    }
-    return new THREE.Line( geometry, material );
+function getColorDistibution(count) {
+    var y = 0.5
+    var out = [];
+    _.times(count, function(c) {
+        var step = (360 / count) * c;
+        var v = Math.cos(step);
+        var u = Math.sin(step);
+        var r = y + v / 0.88
+        var g = y - 0.38 * u - 0.58 * v
+        var b = y + u / 0.49
+        out.push(new THREE.Color(r, g, b));
+    });
+    return out;
+}
+
+function createSegmentLine(geometry, lineWidth, color) {
+    var material = new THREE.LineBasicMaterial({
+    	color: color, linewidth: lineWidth
+    });
+    return new THREE.Line(geometry, material);
 }
 
 /*******************************************************************************
@@ -100,8 +103,10 @@ function() {
         });
     });
 
+    var segmentColors = getColorDistibution(dSegments.length);
+
     // Go distal!
-    _.each(dSegments, function(segment) {
+    _.each(dSegments, function(segment, index) {
         var geometry = new THREE.Geometry();
         var sourceCellXyz = me.spColumns.getCellXyz(segment.source);
         var targetCellXyz = me.spColumns.getCellXyz(segment.target);
@@ -113,8 +118,13 @@ function() {
                 sourceMesh.position,
                 targetMesh.position
             );
+            var lineWidth = segment.connected ? 3 : 1;
+            var color = segmentColors[index];
+            if (segment.predictiveTarget) {
+                color = new THREE.Color('blue');
+            }
             var line = createSegmentLine(
-                geometry, segment.permanence, segment.connected, 3
+                geometry, lineWidth, color
             );
             dSegmentGrid.add(line);
             sourceMesh.material.opacity = 1.0;
@@ -147,7 +157,7 @@ function() {
                 sourceMesh.position,
                 targetMesh.position
             );
-            var line = createSegmentLine(geometry, undefined, true, 1);
+            var line = createSegmentLine(geometry, 1, new THREE.Color('black'));
             pSegmentGrid.add(line);
             sourceMesh.material.opacity = 1.0;
             targetMesh.material.opacity = 1.0;
