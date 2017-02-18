@@ -107,34 +107,33 @@ function() {
 
     // Go distal!
     _.each(dSegments, function(segment, index) {
-        var geometry = new THREE.Geometry();
         var sourceCellXyz = me.spColumns.getCellXyz(segment.source);
-        var targetCellXyz = me.spColumns.getCellXyz(segment.target);
-        // console.log('%s, %s', JSON.stringify(sourceCellXyz), JSON.stringify(targetCellXyz));
         var sourceMesh = me.spMeshCells[sourceCellXyz.x][sourceCellXyz.y][sourceCellXyz.z];
-        var targetMesh = me.spMeshCells[targetCellXyz.x][targetCellXyz.y][targetCellXyz.z];
-        if (sourceMesh && targetMesh) {
-            geometry.vertices.push(
-                sourceMesh.position,
-                targetMesh.position
-            );
-            var lineWidth = segment.connected ? 3 : 1;
-            var color = segmentColors[index];
-            if (segment.predictiveTarget) {
-                color = new THREE.Color('blue');
+        // console.log('%s, %s', JSON.stringify(sourceCellXyz), JSON.stringify(targetCellXyz));
+        var lineWidth = segment.connected ? 3 : 1;
+        var color = segmentColors[index];
+        _.each(segment.synapses, function(synapse) {
+            var geometry = new THREE.Geometry();
+            var targetCellXyz = me.spColumns.getCellXyz(synapse.target);
+            var targetMesh = me.spMeshCells[targetCellXyz.x][targetCellXyz.y][targetCellXyz.z];
+            if (sourceMesh && targetMesh) {
+                geometry.vertices.push(
+                    sourceMesh.position,
+                    targetMesh.position
+                );
+                var line = createSegmentLine(
+                    geometry, lineWidth, color
+                );
+                dSegmentGrid.add(line);
+                sourceMesh.material.opacity = 1.0;
+                targetMesh.material.opacity = 1.0;
+            } else {
+                console.warn('Missing cells!');
+                console.warn(segment);
+                console.warn(sourceCellXyz)
+                console.warn(targetCellXyz)
             }
-            var line = createSegmentLine(
-                geometry, lineWidth, color
-            );
-            dSegmentGrid.add(line);
-            sourceMesh.material.opacity = 1.0;
-            targetMesh.material.opacity = 1.0;
-        } else {
-            console.warn('Missing cells!');
-            console.warn(segment);
-            console.warn(sourceCellXyz)
-            console.warn(targetCellXyz)
-        }
+        });
     });
     this.scene.add(dSegmentGrid);
     this.dSegmentGrid = dSegmentGrid;
@@ -270,24 +269,21 @@ CompleteHtmVisualization.prototype.redim = function(cellsPerRow) {
     this.spMeshCells = this._createSpCells(this.spGrid);
 };
 
-CompleteHtmVisualization.prototype._selectCell = function(cube) {
+CompleteHtmVisualization.prototype._selectCell = function(cube, opaque) {
+    var side = THREE.BackSide;
+    var color = 0x00ff00;
+    if (opaque) {
+        side = THREE.FrontSide;
+    }
     var outlineMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ff00,
-        side: THREE.BackSide
+        color: color,
+        side: side,
     });
 	var outlineMesh = new THREE.Mesh( cube.geometry, outlineMaterial );
     outlineMesh.position.set(cube.position.x, cube.position.y, cube.position.z);
 	outlineMesh.scale.multiplyScalar(1.15);
     this._selections.push(outlineMesh);
 	this.scene.add(outlineMesh);
-};
-
-CompleteHtmVisualization.prototype._selectColumn = function(columnIndex) {
-    var me = this;
-    _.each(this.spColumns.getCellsInColumn(columnIndex), function(cell) {
-        var xyz = me.spColumns.getCellXyz(cell.cellIndex);
-        me._selectCell(me.spMeshCells[xyz.x][xyz.y][xyz.z]);
-    });
 };
 
 CompleteHtmVisualization.prototype._mutateCube =
@@ -301,9 +297,13 @@ function(cube, cellValue, x, y, z) {
         var selectedCell = this.spColumns.selectedCell;
         var selectedColumn = this.spColumns.selectedColumn;
         if (selectedColumn && selectedColumn == cellValue.columnIndex) {
-            this._selectColumn(cellValue.columnIndex);
+            // this._selectColumn(cellValue.columnIndex);
+            this._selectCell(cube);
         } else if (selectedCell && selectedCell == cellValue.cellIndex) {
             this._selectCell(cube);
+        }
+        if (cellValue.highlight) {
+            this._selectCell(cube, true);
         }
     }
 };
