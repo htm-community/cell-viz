@@ -14,10 +14,10 @@ module.exports = {
         color: new THREE.Color('orange'),
         description: 'cell is active, but was not predicted last step'
     },
-    previouslyActive: {
-        state: 'previouslyActive',
-        color: new THREE.Color('#90C3D4'),
-        description: 'cell was active in the last time step'
+    previouslyPredictive: {
+        state: 'previouslyPredictive',
+        color: new THREE.Color('cyan'),
+        description: 'cell is predictive for this time step'
     },
     correctlyPredicted: {
         state: 'correctlyPredicted',
