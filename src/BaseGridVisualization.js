@@ -110,7 +110,7 @@ BaseGridVisualization.prototype._createMeshCells =
         var x = cells.getX();
         var y = cells.getY();
         var z = cells.getZ();
-        var ydim, zdim, cube, material, cellValue;
+        var ydim, zdim, cube, material, cellValue, cellColor;
 
         for (var cx = 0; cx < x; cx++) {
             ydim = [];
@@ -119,8 +119,12 @@ BaseGridVisualization.prototype._createMeshCells =
                 for (var cz = 0; cz < z; cz++) {
                     cellValue = cells.getCellValue(cx, cy, cz);
                     if (cellValue) {
+                        cellColor = cellValue.color;
+                        if (cellColor == undefined) {
+                            cellColor = cellValue.state.color;
+                        }
                         material = new THREE.MeshPhongMaterial( {
-                            color: cellValue.color || cellValue.state.color,
+                            color: cellColor,
                             polygonOffset: true,
                             polygonOffsetFactor: 1, // positive value pushes polygon further away
                             polygonOffsetUnits: 1,
