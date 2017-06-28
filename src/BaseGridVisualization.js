@@ -2,6 +2,43 @@ var THREE = require('three');
 var OBJLoader = require('three-obj-loader');
 var ColladaLoader = require('three-collada-loader');
 
+function addGuides(scene) {
+    // Add guide lines for axes
+    var material = new THREE.LineBasicMaterial({
+        color: "blue"
+    });
+
+    var geometry = new THREE.Geometry();
+    geometry.vertices.push(
+        new THREE.Vector3( 0, 0, 0 ),
+        new THREE.Vector3( 10000, 0, 0 )
+    );
+    var xline = new THREE.Line( geometry, material );
+
+    material = new THREE.LineBasicMaterial({
+        color: "red"
+    });
+    geometry = new THREE.Geometry();
+    geometry.vertices.push(
+        new THREE.Vector3( 0, 0, 0 ),
+        new THREE.Vector3( 0, 10000, 0 )
+    );
+    var yline = new THREE.Line( geometry, material );
+
+    material = new THREE.LineBasicMaterial({
+        color: "green"
+    });
+    geometry = new THREE.Geometry();
+    geometry.vertices.push(
+        new THREE.Vector3( 0, 0, 0 ),
+        new THREE.Vector3( 0, 0, 10000 )
+    );
+    var zline = new THREE.Line( geometry, material );
+
+    scene.add( xline );
+    scene.add( yline );
+    scene.add( zline );
+}
 
 /**
  *
@@ -104,67 +141,66 @@ BaseGridVisualization.prototype._setupScene = function() {
 BaseGridVisualization.prototype._createMeshCells =
     function(cells, grid, position, type) {
         var scene = this.scene;
+        // meshCells is a 1-d array indexed by global cell order.
         var meshCells = [];
         var spacing = this.spacing;
-        var layerSpacing = this.layerSpacing;
-        var x = cells.getX();
-        var y = cells.getY();
-        var z = cells.getZ();
-        var ydim, zdim, cube, material, cellValue, cellColor;
+        var cube, material, cellValue, cellColor;
+        var cellPosition;
 
-        for (var cx = 0; cx < x; cx++) {
-            ydim = [];
-            for (var cy = 0; cy < y; cy++) {
-                zdim = [];
-                for (var cz = 0; cz < z; cz++) {
-                    cellValue = cells.getCellValue(cx, cy, cz);
-                    if (cellValue) {
-                        cellColor = cellValue.color;
-                        if (cellColor == undefined) {
-                            cellColor = cellValue.state.color;
-                        }
-                        material = new THREE.MeshPhongMaterial( {
-                            color: cellColor,
-                            polygonOffset: true,
-                            polygonOffsetFactor: 1, // positive value pushes polygon further away
-                            polygonOffsetUnits: 1,
-                            transparent: true,
-                            opacity: 1.0
-                        });
-                        material.alphaTest = 0.15;
-
-                        cube = new THREE.Mesh(this.geometry, material);
-                        var geo = new THREE.EdgesGeometry( cube.geometry );
-                        // var mat = new THREE.LineBasicMaterial( { color: 0x333, linewidth: 1 } );
-                        // var wireframe = new THREE.LineSegments( geo, mat );
-                        // cube.add( wireframe );
-                        cube.position.x = position.x + (this.cubeSize * spacing.x) * cx;
-                        cube.position.y = position.y - (this.cubeSize * spacing.y) * cy;
-                        cube.position.z = position.z - (this.cubeSize * spacing.z) * cz;
-
-                        // Allow subclasses to mutate each cube.
-                        if (typeof(this._mutateCube) == 'function') {
-                            this._mutateCube(cube, cellValue, cx, cy, cz)
-                        }
-
-                        cube.updateMatrix();
-                        cube.matrixAutoUpdate = false;
-                        cube._cellData = {
-                            type: type, x: cx, y: cy, z: cz
-                        };
-                        grid.add(cube);
-                        zdim.push(cube);
-                        // Keep track of cubes in the grid so they can be clickable.
-                        this.targets.push(cube);
-                    }
+        for (var index = 0; index < cells.size(); index++) {
+            cellValue = cells.getCellValue(index);
+            if (cellValue) {
+                cellPosition = cells.getCellPosition(index);
+                cellColor = cellValue.color;
+                if (cellColor == undefined) {
+                    cellColor = cellValue.state.color;
                 }
-                // console.log('z: %s', zdim.length);
-                ydim.push(zdim);
+                material = new THREE.MeshPhongMaterial( {
+                    color: cellColor,
+                    polygonOffset: true,
+                    polygonOffsetFactor: 1, // positive value pushes polygon further away
+                    polygonOffsetUnits: 1,
+                    transparent: true,
+                    opacity: 1.0
+                });
+                material.alphaTest = 0.15;
+
+                cube = new THREE.Mesh(this.geometry, material);
+
+                // Wireframe.
+                var geo = new THREE.EdgesGeometry( cube.geometry );
+                var mat = new THREE.LineBasicMaterial( { color: 0x333, linewidth: 1 } );
+                var wireframe = new THREE.LineSegments( geo, mat );
+                cube.add( wireframe );
+
+                cube.position.x = position.x + (this.cubeSize * spacing.x) * cellPosition.x;
+                cube.position.y = position.y + (this.cubeSize * spacing.y) * cellPosition.y;
+                cube.position.z = position.z + (this.cubeSize * spacing.z) * cellPosition.z;
+
+                // Allow subclasses to mutate each cube.
+                if (typeof(this._mutateCube) == 'function') {
+                    this._mutateCube(cube, cellValue, cx, cy, cz)
+                }
+
+                cube.updateMatrix();
+                cube.matrixAutoUpdate = false;
+                cube._cellData = {
+                    type: type,
+                    x: cellPosition.x,
+                    y: cellPosition.y,
+                    z: cellPosition.z
+                };
+                grid.add(cube);
+                meshCells.push(cube);
+                // Keep track of cubes in the grid so they can be clickable.
+                this.targets.push(cube);
             }
-            meshCells.push(ydim);
-            // console.log('y: %s', ydim.length);
         }
+
         scene.add(grid);
+
+        addGuides(scene);
+
         return meshCells;
     };
 
@@ -173,26 +209,23 @@ BaseGridVisualization.prototype._createMeshCells =
  * This function should only be called when the cells change.
  */
 BaseGridVisualization.prototype._applyMeshCells = function(cells, meshCells, position) {
-    var cube, cellValue;
+    var cube, cellValue, cellPosition;
     var spacing = this.spacing;
-
-    for (var cx = 0; cx < cells.getX(); cx++) {
-        for (var cy = 0; cy < cells.getY(); cy++) {
-            for (var cz = 0; cz < cells.getZ(); cz++) {
-                cube = meshCells[cx][cy][cz];
-                cellValue = cells.getCellValue(cx, cy, cz);
-                if (cellValue) {
-                    cube.material.color = new THREE.Color(cellValue.color || cellValue.state.color);
-                    cube.position.x = position.x + (this.cubeSize * spacing.x) * cx;
-                    cube.position.y = position.y - (this.cubeSize * spacing.y) * cy;
-                    cube.position.z = position.z - (this.cubeSize * spacing.z) * cz;
-                    // Allow subclasses to mutate each cube.
-                    if (typeof(this._mutateCube) == 'function') {
-                        this._mutateCube(cube, cellValue, cx, cy, cz)
-                    }
-                    cube.updateMatrix();
-                }
+    for (var index = 0; index < cells.size(); index++) {
+        cube = meshCells[index];
+        cellValue = cells.getCellValue(index);
+        cellPosition = cells.getCellPosition(index);
+        if (cellValue) {
+            // console.log("Applying cell at %s with r:%s g:%s", index, cellColor.r, cellColor.g)
+            cube.material.color = new THREE.Color(cellValue.color);
+            cube.position.x = position.x + (this.cubeSize * spacing.x) * cellPosition.x;
+            cube.position.y = position.y - (this.cubeSize * spacing.y) * cellPosition.y;
+            cube.position.z = position.z - (this.cubeSize * spacing.z) * cellPosition.z;
+            // Allow subclasses to mutate each cube.
+            if (typeof(this._mutateCube) == 'function') {
+                this._mutateCube(cube, cellValue, cellPosition.x, cellPosition.y, cellPosition.z)
             }
+            cube.updateMatrix();
         }
     }
 };
