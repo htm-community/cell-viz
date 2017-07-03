@@ -10,6 +10,7 @@ module.exports = {
     entry: [
         "./src/threejs/renderers/Projector.js",
         "./src/threejs/controls/FlyControls.js",
+        "./src/threejs/textures/threex.dynamictexture.js",
         "./src/HtmCells.js",
         "./src/InputCells.js",
         "./src/HtmMiniColumns.js",
