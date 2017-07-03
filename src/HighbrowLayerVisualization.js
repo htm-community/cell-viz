@@ -133,7 +133,7 @@ HighbrowLayerVisualization.prototype._setupScene = function() {
 };
 
 HighbrowLayerVisualization.prototype._getCellValue = function(index) {
-    let neuronState = this.layer.getNeuronByIndex(index).state
+    let neuronState = this.layer.getNeuronByIndex(index).getState()
     let out = { state: neuronState }
     if (neuronState == "inactive") {
         out.color = new THREE.Color('#FFFEEE')
@@ -249,7 +249,7 @@ function(meshCells, origin) {
 
             // This will display positional information on the cell texture for
             // debugging purposes.
-            cellPosition = this.layer.getNeuronByIndex(index).position
+            cellPosition = this.layer.getNeuronByIndex(index).getPosition()
             textTexture = this.textTextures[index]
             textTexture.clear('white')
             textTexture.drawText(index, undefined, 30, 'black')
