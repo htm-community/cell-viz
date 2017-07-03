@@ -35,10 +35,9 @@ SingleLayerVisualization.prototype.render = function(opts) {
     var h = this.height;
     var grid = new THREE.Group();
 
-    // var position = this.position = this.getOffsetCenterPosition(
-    //     this.cells, this.cubeSize, this.spacing, this.offset
-    // );
-    var position = this.position = {x: 0, y: 0, z: 0}
+    var position = this.position = this.getOffsetCenterPosition(
+        this.cells, this.cubeSize, this.spacing, this.offset
+    );
 
     this.meshCells = this._createMeshCells(this.cells, grid, position);
 
