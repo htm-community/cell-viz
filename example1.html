@@ -11,44 +11,45 @@
     <body>
 
         <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
-        <script src="bin/cell-viz-1.1.0.bundle.js"></script>
+        <script src="bin/cell-viz-1.0.1.bundle.js"></script>
 
         <script>
 
             $(function() {
 
-                function getGreenToRed(percent){
-                    var r, g;
-                    percent = 100 - percent;
-                    r = percent < 50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
-                    g = percent > 50 ? 255 : Math.floor((percent*2)*255/100);
-                    return new THREE.Color(r, g, 0);
-                }
-                function translate(x, min, max) {
-                    var range = max - min;
-                    return (x - min) / range;
-                }
-
-
                 // The Cells interface is how to update the visualization inside the canvas.
-                var cells = new HtmCells(1000, 10, 10)
+                var cells = new HtmCells(10, 10, 4);
 
                 // The HtmCellVisualization object handles all interactions with the DOM.
-                var cellviz = new SingleLayerVisualization(cells);
+                var cellviz = new SingleLayerVisualization(cells, {offset: {z: -30}});
 
                 cells.update(0, 0, 0, {color: 1});
                 cells.update(cells.getX() - 1, cells.getY() - 1, cells.getZ() - 1, {color: 2});
 
-                colorCells(cells);
+                colorCellsRandomly(cells);
 
                 // Renders the canvas with empty cells into the DOM and canvas.
-                cellviz.render();
+                cellviz.render({initialDistance: 100});
 
-                function colorCells(myCells) {
-                    var size = myCells.size();
-                    for (var i = 0; i < size; i++) {
-                        var perc = translate(i, 0, size) * 100;
-                        myCells.update(i, {color: getGreenToRed(perc)});
+                setInterval(function() {
+                    colorCellsRandomly(cells);
+                    cellviz.redraw();
+                }, 500);
+
+                function randomHexColor() {
+                    return Math.floor(Math.random()*16777215);
+                }
+
+                function colorCellsRandomly(myCells) {
+                    for (var cx = 0; cx < cells.getX(); cx++) {
+                        for (var cy = 0; cy < cells.getY(); cy++) {
+                            for (var cz = 0; cz < cells.getZ(); cz++) {
+                                myCells.update(
+                                    cx, cy, cz,
+                                    {color: randomHexColor()}
+                                );
+                            }
+                        }
                     }
                 }
 
