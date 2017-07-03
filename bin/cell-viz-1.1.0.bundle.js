@@ -43120,20 +43120,6 @@
 	# ----------------------------------------------------------------------
 	*/
 
-	function getXyzFromIndex(idx, xsize, ysize) {
-	    var zcapacity = xsize * ysize;
-	    var x = 0, y = 0, z = 0;
-	    if (idx >= zcapacity) {
-	        z = Math.floor(idx / zcapacity);
-	    }
-	    var idx2d = idx - (zcapacity * z);
-	    if (idx2d > (ysize-1)) {
-	        x = Math.floor(idx2d / ysize);
-	    }
-	    var y = idx2d - (ysize * x);
-	    return {x: x, y: y, z: z};
-	}
-
 	/*******************************************************************************
 	 * HTM Cells
 	 *******************************************************************************/
@@ -43146,20 +43132,27 @@
 	 * @param z (int) z dimension
 	 * @constructor
 	 */
-	function HtmCells(numCells, cellsPerColumn, numRows) {
-	    this.xdim = numRows;
-	    this.ydim = cellsPerColumn;
-	    this.zdim = Math.ceil(numCells / numRows / cellsPerColumn);
-	    this.numCells = numCells;
+	function HtmCells(x, y, z) {
+	    this.xdim = x;
+	    this.ydim = y;
+	    this.zdim = z;
 	    this.cells = [];
-	    for (var i = 0; i< numCells; i++) {
-	        this.cells.push({color: 'white'});
+
+	    // Create initially empty matrices.
+	    var ylist;
+	    var zlist;
+	    for (var cx = 0; cx < this.xdim; cx++) {
+	        ylist = [];
+	        for (var cy = 0; cy < this.ydim; cy++) {
+	            zlist = [];
+	            for (var cz = 0; cz < this.zdim; cz++) {
+	                zlist.push({color: 0});
+	            }
+	            ylist.push(zlist);
+	        }
+	        this.cells.push(ylist);
 	    }
 	}
-
-	HtmCells.prototype.size = function() {
-	    return this.numCells;
-	};
 
 	HtmCells.prototype.getX = function() {
 	    return this.xdim;
@@ -43180,14 +43173,9 @@
 	 * @param z (int) z coordinate
 	 * @returns {*} whatever value was in the cell
 	 */
-	HtmCells.prototype.getCellValue = function(index) {
-	    // TODO: raise error if cell index is invalid.
-	    return this.cells[index];
-	};
-
-	HtmCells.prototype.getCellPosition = function(index) {
-	    var pos = getXyzFromIndex(index, this.getX(), this.getY());
-	    return pos;
+	HtmCells.prototype.getCellValue = function(x, y, z) {
+	    // TODO: raise error if cell coordinates are invalid.
+	    return this.cells[x][y][z];
 	};
 
 	/**
@@ -43197,8 +43185,8 @@
 	 * @param z (int) z coordinate
 	 * @param value {*} should contain a color, perhaps more
 	 */
-	HtmCells.prototype.update = function(index, value) {
-	    var currentValue = this.getCellValue(index);
+	HtmCells.prototype.update = function(x, y, z, value) {
+	    var currentValue = this.getCellValue(x, y, z);
 	    var proposedValue;
 	    for (var key in value) {
 	        proposedValue = value[key];
@@ -43213,8 +43201,12 @@
 	 * @param value {*} Whatever value you want the cells to have.
 	 */
 	HtmCells.prototype.updateAll = function(value) {
-	    for (var index = 0; index < this.numCells; index++) {
-	        this.update(index, value);
+	    for (var cx = 0; cx < this.xdim; cx++) {
+	        for (var cy = 0; cy < this.ydim; cy++) {
+	            for (var cz = 0; cz < this.zdim; cz++) {
+	                this.update(cx, cy, cz, value);
+	            }
+	        }
 	    }
 	};
 
