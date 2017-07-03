@@ -43,9 +43,9 @@ function addGuides(scene) {
 /**
  * experiment
  */
-function HighbrowLayerVisualization(cells, opts) {
+function HighbrowLayerVisualization(highbrowLayer, opts) {
     if (!opts) opts = {};
-    this.cells = cells;
+    this.layer = highbrowLayer;
     this.meshCells = [];
     this.opts = opts;
     this.spacing = opts.spacing;
@@ -107,7 +107,9 @@ HighbrowLayerVisualization.prototype._setupCamera = function() {
 };
 
 HighbrowLayerVisualization.prototype._setupControls = function() {
-    var controls = this.controls = new THREE.FlyControls( this.camera, this.renderer.domElement );
+    var controls = this.controls = new THREE.FlyControls(
+        this.camera, this.renderer.domElement
+    );
     controls.movementSpeed = 1000;
     controls.rollSpeed = Math.PI / 24;
     controls.autoForward = false;
@@ -130,35 +132,58 @@ HighbrowLayerVisualization.prototype._setupScene = function() {
     this.$container.append(renderer.domElement);
 };
 
-/*
+HighbrowLayerVisualization.prototype._getCellValue = function(index) {
+    let neuronState = this.layer.getNeuronByIndex(index).state
+    let out = { state: neuronState }
+    if (neuronState == "inactive") {
+        out.color = new THREE.Color('#FFFEEE')
+    } else {
+        out.color = new THREE.Color('orange')
+    }
+    return out;
+};
+
+HighbrowLayerVisualization.prototype._getCellOrigin = function(index) {
+    return this.layer.getNeuronByIndex(index).getOrigin()
+};
+
+/**
  * Creates all the geometries within the grid. These are only created once and
  * updated as cells change over time, so this function should only be called
  * one time for each grid of cells created in the scene.
  */
 HighbrowLayerVisualization.prototype._createMeshCells =
-    function(cells, grid, position, type) {
+    function(grid, origin, type) {
         var scene = this.scene;
         // meshCells is a 1-d array indexed by global cell order.
         var meshCells = [];
         var spacing = this.spacing;
-        var cube, material, cellValue, cellColor;
-        var cellPosition;
+        var cube, textTexture, material, cellValue, cellColor;
+        var cellOrigin;
 
-        for (var index = 0; index < cells.size(); index++) {
-            cellValue = cells.getCellValue(index);
+        var textTextures = this.textTextures = []
+
+        for (var index = 0; index < this.layer.getNeurons().length; index++) {
+            cellValue = this._getCellValue(index);
             if (cellValue) {
-                cellPosition = cells.getCellPosition(index);
+                cellOrigin = this._getCellOrigin(index);
                 cellColor = cellValue.color;
                 if (cellColor == undefined) {
                     cellColor = cellValue.state.color;
                 }
-                material = new THREE.MeshPhongMaterial( {
+
+                textTexture = new THREEx.DynamicTexture(
+                    64, 64
+                );
+                textTexture.context.font = "18px Verdana";
+                // So we can update the text on each cell.
+                textTextures.push(textTexture)
+
+                material = new THREE.MeshPhongMaterial({
                     color: cellColor,
-                    polygonOffset: true,
-                    polygonOffsetFactor: 1, // positive value pushes polygon further away
-                    polygonOffsetUnits: 1,
                     transparent: true,
-                    opacity: 1.0
+                    opacity: 1.0,
+                    map: textTexture.texture
                 });
                 material.alphaTest = 0.15;
 
@@ -166,13 +191,18 @@ HighbrowLayerVisualization.prototype._createMeshCells =
 
                 // Wireframe.
                 var geo = new THREE.EdgesGeometry( cube.geometry );
-                var mat = new THREE.LineBasicMaterial( { color: 0x333, linewidth: 1 } );
+                var mat = new THREE.LineBasicMaterial(
+                    { color: 0x333, linewidth: 1 }
+                );
                 var wireframe = new THREE.LineSegments( geo, mat );
                 cube.add( wireframe );
 
-                cube.position.x = position.x + (this.cubeSize * spacing.x) * cellPosition.x;
-                cube.position.y = position.y + (this.cubeSize * spacing.y) * cellPosition.y;
-                cube.position.z = position.z + (this.cubeSize * spacing.z) * cellPosition.z;
+                cube.position.x = origin.x + (this.cubeSize * spacing.x)
+                                    * cellOrigin.x;
+                cube.position.y = origin.y + (this.cubeSize * spacing.y)
+                                    * cellOrigin.y;
+                cube.position.z = origin.z + (this.cubeSize * spacing.z)
+                                    * cellOrigin.z;
 
                 // Allow subclasses to mutate each cube.
                 if (typeof(this._mutateCube) == 'function') {
@@ -181,12 +211,6 @@ HighbrowLayerVisualization.prototype._createMeshCells =
 
                 cube.updateMatrix();
                 cube.matrixAutoUpdate = false;
-                cube._cellData = {
-                    type: type,
-                    x: cellPosition.x,
-                    y: cellPosition.y,
-                    z: cellPosition.z
-                };
                 grid.add(cube);
                 meshCells.push(cube);
                 // Keep track of cubes in the grid so they can be clickable.
@@ -205,32 +229,57 @@ HighbrowLayerVisualization.prototype._createMeshCells =
  * Updates the mesh cell colors based on the cells, which might have changed.
  * This function should only be called when the cells change.
  */
-HighbrowLayerVisualization.prototype._applyMeshCells = function(cells, meshCells, position) {
-    var cube, cellValue, cellPosition;
+HighbrowLayerVisualization.prototype._applyMeshCells =
+function(meshCells, origin) {
+    var cube, cellValue, cellOrigin;
     var spacing = this.spacing;
-    for (var index = 0; index < cells.size(); index++) {
+    var textTexture, displayText, cellPosition;
+    for (var index = 0; index < this.layer.getNeurons().length; index++) {
         cube = meshCells[index];
-        cellValue = cells.getCellValue(index);
-        cellPosition = cells.getCellPosition(index);
+        cellValue = this._getCellValue(index);
+        cellOrigin = this._getCellOrigin(index);
         if (cellValue) {
-            // console.log("Applying cell at %s with r:%s g:%s", index, cellColor.r, cellColor.g)
             cube.material.color = new THREE.Color(cellValue.color);
-            cube.position.x = position.x + (this.cubeSize * spacing.x) * cellPosition.x;
-            cube.position.y = position.y - (this.cubeSize * spacing.y) * cellPosition.y;
-            cube.position.z = position.z - (this.cubeSize * spacing.z) * cellPosition.z;
+            cube.position.x = origin.x + (this.cubeSize * spacing.x)
+                                * cellOrigin.x;
+            cube.position.y = origin.y + (this.cubeSize * spacing.y)
+                                * cellOrigin.y;
+            cube.position.z = origin.z + (this.cubeSize * spacing.z)
+                                * cellOrigin.z;
+
+            // This will display positional information on the cell texture for
+            // debugging purposes.
+            cellPosition = this.layer.getNeuronByIndex(index).position
+            textTexture = this.textTextures[index]
+            textTexture.clear('white')
+            textTexture.drawText(index, undefined, 30, 'black')
+            textTexture.drawText(
+                cellPosition.x + ", " + cellPosition.y + ", " + cellPosition.z,
+                undefined,
+                50,
+                'black'
+            )
+            textTexture.texture.needsUpdate = true
+
             // Allow subclasses to mutate each cube.
             if (typeof(this._mutateCube) == 'function') {
-                this._mutateCube(cube, cellValue, cellPosition.x, cellPosition.y, cellPosition.z)
+                this._mutateCube(
+                    cube, cellValue, cellOrigin.x, cellOrigin.y, cellOrigin.z
+                )
             }
             cube.updateMatrix();
         }
     }
 };
 
-HighbrowLayerVisualization.prototype.getOffsetCenterPosition = function(cells, cubeSize, spacing, offset) {
+HighbrowLayerVisualization.prototype.getOffsetCenterPosition =
+function(cubeSize, spacing, offset) {
+    var dims = this.layer.getDimensions()
     return {
-        x: (offset.x * cubeSize * spacing.x) + (cells.getX() * cubeSize * spacing.x) / 2,
-        y: (offset.y * cubeSize * spacing.y) + (cells.getY() * cubeSize * spacing.y) / 2,
+        x: (offset.x * cubeSize * spacing.x)
+            + (dims.x * cubeSize * spacing.x) / 2,
+        y: (offset.y * cubeSize * spacing.y)
+            + (dims.y * cubeSize * spacing.y) / 2,
         z: (offset.z * cubeSize * spacing.z)
     };
 };
@@ -252,11 +301,11 @@ HighbrowLayerVisualization.prototype.render = function(opts) {
     var grid = new THREE.Group();
 
     // var position = this.position = this.getOffsetCenterPosition(
-    //     this.cells, this.cubeSize, this.spacing, this.offset
+    //     this.cubeSize, this.spacing, this.offset
     // );
     var position = this.position = {x: 0, y: 0, z: 0}
 
-    this.meshCells = this._createMeshCells(this.cells, grid, position);
+    this.meshCells = this._createMeshCells(grid, position);
 
     window.addEventListener('resize', function() {
         w = me.width = me.$container.innerWidth();
@@ -287,7 +336,7 @@ HighbrowLayerVisualization.prototype.render = function(opts) {
 };
 
 HighbrowLayerVisualization.prototype.redraw = function() {
-    this._applyMeshCells(this.cells, this.meshCells, this.position);
+    this._applyMeshCells(this.meshCells, this.position);
 };
 
 module.exports = HighbrowLayerVisualization;

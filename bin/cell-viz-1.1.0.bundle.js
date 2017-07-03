@@ -50,10 +50,11 @@
 	__webpack_require__(5);
 	__webpack_require__(6);
 	__webpack_require__(7);
-	__webpack_require__(10);
+	__webpack_require__(8);
 	__webpack_require__(11);
 	__webpack_require__(12);
-	module.exports = __webpack_require__(13);
+	__webpack_require__(13);
+	module.exports = __webpack_require__(14);
 
 
 /***/ },
@@ -43098,6 +43099,164 @@
 /* 4 */
 /***/ function(module, exports) {
 
+	var THREEx	= THREEx	|| {}
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		Constructor							//
+	//////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * create a dynamic texture with a underlying canvas
+	 *
+	 * @param {Number} width  width of the canvas
+	 * @param {Number} height height of the canvas
+	 */
+	THREEx.DynamicTexture	= function(width, height){
+		var canvas	= document.createElement( 'canvas' )
+		canvas.width	= width
+		canvas.height	= height
+		this.canvas	= canvas
+
+		var context	= canvas.getContext( '2d' )
+		this.context	= context
+
+		var texture	= new THREE.Texture(canvas)
+		this.texture	= texture
+	}
+
+	//////////////////////////////////////////////////////////////////////////////////
+	//		methods								//
+	//////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * clear the canvas
+	 *
+	 * @param  {String*} fillStyle 		the fillStyle to clear with, if not provided, fallback on .clearRect
+	 * @return {THREEx.DynamicTexture}      the object itself, for chained texture
+	 */
+	THREEx.DynamicTexture.prototype.clear = function(fillStyle){
+		// depends on fillStyle
+		if( fillStyle !== undefined ){
+			this.context.fillStyle	= fillStyle
+			this.context.fillRect(0,0,this.canvas.width, this.canvas.height)
+		}else{
+			this.context.clearRect(0,0,this.canvas.width, this.canvas.height)
+		}
+		// make the texture as .needsUpdate
+		this.texture.needsUpdate	= true;
+		// for chained API
+		return this;
+	}
+
+	/**
+	 * draw text
+	 *
+	 * @param  {String}		text	- the text to display
+	 * @param  {Number|undefined}	x	- if provided, it is the x where to draw, if not, the text is centered
+	 * @param  {Number}		y	- the y where to draw the text
+	 * @param  {String*} 		fillStyle - the fillStyle to clear with, if not provided, fallback on .clearRect
+	 * @param  {String*} 		contextFont - the font to use
+	 * @return {THREEx.DynamicTexture}	- the object itself, for chained texture
+	 */
+	THREEx.DynamicTexture.prototype.drawText = function(text, x, y, fillStyle, contextFont){
+		// set font if needed
+		if( contextFont !== undefined )	this.context.font = contextFont;
+		// if x isnt provided
+		if( x === undefined || x === null ){
+			var textSize	= this.context.measureText(text);
+			x = (this.canvas.width - textSize.width) / 2;
+		}
+		// actually draw the text
+		this.context.fillStyle = fillStyle;
+		this.context.fillText(text, x, y);
+		// make the texture as .needsUpdate
+		this.texture.needsUpdate	= true;
+		// for chained API
+		return this;
+	};
+
+	THREEx.DynamicTexture.prototype.drawTextCooked = function(options){
+		var context	= this.context
+		var canvas	= this.canvas
+		options		= options	|| {}
+		var text	= options.text
+		var params	= {
+			margin		: options.margin !== undefined ? options.margin	: 0.1,
+			lineHeight	: options.lineHeight !== undefined ? options.lineHeight : 0.1,
+			align		: options.align !== undefined ? options.align : 'left',
+			fillStyle	: options.fillStyle !== undefined ? options.fillStyle : 'black',
+			font		: options.font !== undefined ? options.font : "bold "+(0.2*512)+"px Arial",
+		}
+		// sanity check
+		console.assert(typeof(text) === 'string')
+
+		context.save()
+		context.fillStyle	= params.fillStyle;
+		context.font		= params.font;
+
+		var y	= (params.lineHeight + params.margin)*canvas.height
+		while(text.length > 0 ){
+			// compute the text for specifically this line
+			var maxText	= computeMaxTextLength(text)
+			// update the remaining text
+			text	= text.substr(maxText.length)
+
+
+			// compute x based on params.align
+			var textSize	= context.measureText(maxText);
+			if( params.align === 'left' ){
+				var x	= params.margin*canvas.width
+			}else if( params.align === 'right' ){
+				var x	= (1-params.margin)*canvas.width - textSize.width
+			}else if( params.align === 'center' ){
+				var x = (canvas.width - textSize.width) / 2;
+			}else	console.assert( false )
+
+			// actually draw the text at the proper position
+			this.context.fillText(maxText, x, y);
+
+			// goto the next line
+			y	+= params.lineHeight*canvas.height
+		}
+		context.restore()
+
+		// make the texture as .needsUpdate
+		this.texture.needsUpdate	= true;
+		// for chained API
+		return this;
+
+		function computeMaxTextLength(text){
+			var maxText	= ''
+			var maxWidth	= (1-params.margin*2)*canvas.width
+			while( maxText.length !== text.length ){
+				var textSize	= context.measureText(maxText);
+				if( textSize.width > maxWidth )	break;
+				maxText	+= text.substr(maxText.length, 1)
+			}
+			return maxText
+		}
+	}
+
+	/**
+	 * execute the drawImage on the internal context
+	 * the arguments are the same the official context2d.drawImage
+	 */
+	THREEx.DynamicTexture.prototype.drawImage	= function(/* same params as context2d.drawImage */){
+		// call the drawImage
+		this.context.drawImage.apply(this.context, arguments)
+		// make the texture as .needsUpdate
+		this.texture.needsUpdate	= true;
+		// for chained API
+		return this;
+	}
+
+	window.THREEx = THREEx
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports) {
+
 	/*
 	# ----------------------------------------------------------------------
 	# Copyright (C) 2016, Numenta, Inc.  Unless you have an agreement
@@ -43214,7 +43373,7 @@
 
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports) {
 
 	/*
@@ -43346,7 +43505,7 @@
 
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports) {
 
 	/*
@@ -43496,12 +43655,12 @@
 
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var THREE = __webpack_require__(2);
-	var OBJLoader = __webpack_require__(8);
-	var ColladaLoader = __webpack_require__(9);
+	var OBJLoader = __webpack_require__(9);
+	var ColladaLoader = __webpack_require__(10);
 
 
 	/**
@@ -43717,7 +43876,7 @@
 
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -44035,7 +44194,7 @@
 	};
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var THREE = __webpack_require__( 2 );
@@ -49545,10 +49704,10 @@
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var BaseGridVisualization = __webpack_require__(7);
+	var BaseGridVisualization = __webpack_require__(8);
 
 	function getColorDistibution(count) {
 	    var y = 0.5
@@ -49862,10 +50021,10 @@
 
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var BaseGridVisualization = __webpack_require__(7);
+	var BaseGridVisualization = __webpack_require__(8);
 
 	/*******************************************************************************
 	 * Simple single layer block of cells for TM
@@ -49944,10 +50103,10 @@
 
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var BaseGridVisualization = __webpack_require__(7);
+	var BaseGridVisualization = __webpack_require__(8);
 
 	/*******************************************************************************
 	 * Two layer viz with SP on top and input space on bottom with topology
@@ -50053,7 +50212,7 @@
 
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -50079,18 +50238,18 @@
 	*/
 
 	window.THREE = __webpack_require__(2);
-	window.HtmCellStates = __webpack_require__(14);
-	window.SingleLayerVisualization = __webpack_require__(11);
-	window.SpToInputVisualization = __webpack_require__(12);
-	window.CompleteHtmVisualization = __webpack_require__(10);
-	window.HighbrowLayerVisualization = __webpack_require__(15);
-	window.HtmCells = __webpack_require__(4);
-	window.InputCells = __webpack_require__(5);
-	window.HtmMiniColumns = __webpack_require__(6);
+	window.HtmCellStates = __webpack_require__(15);
+	window.SingleLayerVisualization = __webpack_require__(12);
+	window.SpToInputVisualization = __webpack_require__(13);
+	window.CompleteHtmVisualization = __webpack_require__(11);
+	window.HighbrowLayerVisualization = __webpack_require__(16);
+	window.HtmCells = __webpack_require__(5);
+	window.InputCells = __webpack_require__(6);
+	window.HtmMiniColumns = __webpack_require__(7);
 
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	module.exports = {
@@ -50143,12 +50302,12 @@
 
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var THREE = __webpack_require__(2);
-	var OBJLoader = __webpack_require__(8);
-	var ColladaLoader = __webpack_require__(9);
+	var OBJLoader = __webpack_require__(9);
+	var ColladaLoader = __webpack_require__(10);
 
 	function addGuides(scene) {
 	    // Add guide lines for axes
@@ -50191,9 +50350,9 @@
 	/**
 	 * experiment
 	 */
-	function HighbrowLayerVisualization(cells, opts) {
+	function HighbrowLayerVisualization(highbrowLayer, opts) {
 	    if (!opts) opts = {};
-	    this.cells = cells;
+	    this.layer = highbrowLayer;
 	    this.meshCells = [];
 	    this.opts = opts;
 	    this.spacing = opts.spacing;
@@ -50255,7 +50414,9 @@
 	};
 
 	HighbrowLayerVisualization.prototype._setupControls = function() {
-	    var controls = this.controls = new THREE.FlyControls( this.camera, this.renderer.domElement );
+	    var controls = this.controls = new THREE.FlyControls(
+	        this.camera, this.renderer.domElement
+	    );
 	    controls.movementSpeed = 1000;
 	    controls.rollSpeed = Math.PI / 24;
 	    controls.autoForward = false;
@@ -50278,35 +50439,58 @@
 	    this.$container.append(renderer.domElement);
 	};
 
-	/*
+	HighbrowLayerVisualization.prototype._getCellValue = function(index) {
+	    let neuronState = this.layer.getNeuronByIndex(index).state
+	    let out = { state: neuronState }
+	    if (neuronState == "inactive") {
+	        out.color = new THREE.Color('#FFFEEE')
+	    } else {
+	        out.color = new THREE.Color('orange')
+	    }
+	    return out;
+	};
+
+	HighbrowLayerVisualization.prototype._getCellOrigin = function(index) {
+	    return this.layer.getNeuronByIndex(index).getOrigin()
+	};
+
+	/**
 	 * Creates all the geometries within the grid. These are only created once and
 	 * updated as cells change over time, so this function should only be called
 	 * one time for each grid of cells created in the scene.
 	 */
 	HighbrowLayerVisualization.prototype._createMeshCells =
-	    function(cells, grid, position, type) {
+	    function(grid, origin, type) {
 	        var scene = this.scene;
 	        // meshCells is a 1-d array indexed by global cell order.
 	        var meshCells = [];
 	        var spacing = this.spacing;
-	        var cube, material, cellValue, cellColor;
-	        var cellPosition;
+	        var cube, textTexture, material, cellValue, cellColor;
+	        var cellOrigin;
 
-	        for (var index = 0; index < cells.size(); index++) {
-	            cellValue = cells.getCellValue(index);
+	        var textTextures = this.textTextures = []
+
+	        for (var index = 0; index < this.layer.getNeurons().length; index++) {
+	            cellValue = this._getCellValue(index);
 	            if (cellValue) {
-	                cellPosition = cells.getCellPosition(index);
+	                cellOrigin = this._getCellOrigin(index);
 	                cellColor = cellValue.color;
 	                if (cellColor == undefined) {
 	                    cellColor = cellValue.state.color;
 	                }
-	                material = new THREE.MeshPhongMaterial( {
+
+	                textTexture = new THREEx.DynamicTexture(
+	                    64, 64
+	                );
+	                textTexture.context.font = "18px Verdana";
+	                // So we can update the text on each cell.
+	                textTextures.push(textTexture)
+
+	                material = new THREE.MeshPhongMaterial({
 	                    color: cellColor,
-	                    polygonOffset: true,
-	                    polygonOffsetFactor: 1, // positive value pushes polygon further away
-	                    polygonOffsetUnits: 1,
 	                    transparent: true,
-	                    opacity: 1.0
+	                    opacity: 1.0,
+	                    map: textTexture.texture
 	                });
 	                material.alphaTest = 0.15;
 
@@ -50314,13 +50498,18 @@
 
 	                // Wireframe.
 	                var geo = new THREE.EdgesGeometry( cube.geometry );
-	                var mat = new THREE.LineBasicMaterial( { color: 0x333, linewidth: 1 } );
+	                var mat = new THREE.LineBasicMaterial(
+	                    { color: 0x333, linewidth: 1 }
+	                );
 	                var wireframe = new THREE.LineSegments( geo, mat );
 	                cube.add( wireframe );
 
-	                cube.position.x = position.x + (this.cubeSize * spacing.x) * cellPosition.x;
-	                cube.position.y = position.y + (this.cubeSize * spacing.y) * cellPosition.y;
-	                cube.position.z = position.z + (this.cubeSize * spacing.z) * cellPosition.z;
+	                cube.position.x = origin.x + (this.cubeSize * spacing.x)
+	                                    * cellOrigin.x;
+	                cube.position.y = origin.y + (this.cubeSize * spacing.y)
+	                                    * cellOrigin.y;
+	                cube.position.z = origin.z + (this.cubeSize * spacing.z)
+	                                    * cellOrigin.z;
 
 	                // Allow subclasses to mutate each cube.
 	                if (typeof(this._mutateCube) == 'function') {
@@ -50329,12 +50518,6 @@
 
 	                cube.updateMatrix();
 	                cube.matrixAutoUpdate = false;
-	                cube._cellData = {
-	                    type: type,
-	                    x: cellPosition.x,
-	                    y: cellPosition.y,
-	                    z: cellPosition.z
-	                };
 	                grid.add(cube);
 	                meshCells.push(cube);
 	                // Keep track of cubes in the grid so they can be clickable.
@@ -50353,32 +50536,57 @@
 	 * Updates the mesh cell colors based on the cells, which might have changed.
 	 * This function should only be called when the cells change.
 	 */
-	HighbrowLayerVisualization.prototype._applyMeshCells = function(cells, meshCells, position) {
-	    var cube, cellValue, cellPosition;
+	HighbrowLayerVisualization.prototype._applyMeshCells =
+	function(meshCells, origin) {
+	    var cube, cellValue, cellOrigin;
 	    var spacing = this.spacing;
-	    for (var index = 0; index < cells.size(); index++) {
+	    var textTexture, displayText, cellPosition;
+	    for (var index = 0; index < this.layer.getNeurons().length; index++) {
 	        cube = meshCells[index];
-	        cellValue = cells.getCellValue(index);
-	        cellPosition = cells.getCellPosition(index);
+	        cellValue = this._getCellValue(index);
+	        cellOrigin = this._getCellOrigin(index);
 	        if (cellValue) {
-	            // console.log("Applying cell at %s with r:%s g:%s", index, cellColor.r, cellColor.g)
 	            cube.material.color = new THREE.Color(cellValue.color);
-	            cube.position.x = position.x + (this.cubeSize * spacing.x) * cellPosition.x;
-	            cube.position.y = position.y - (this.cubeSize * spacing.y) * cellPosition.y;
-	            cube.position.z = position.z - (this.cubeSize * spacing.z) * cellPosition.z;
+	            cube.position.x = origin.x + (this.cubeSize * spacing.x)
+	                                * cellOrigin.x;
+	            cube.position.y = origin.y + (this.cubeSize * spacing.y)
+	                                * cellOrigin.y;
+	            cube.position.z = origin.z + (this.cubeSize * spacing.z)
+	                                * cellOrigin.z;
+
+	            // This will display positional information on the cell texture for
+	            // debugging purposes.
+	            cellPosition = this.layer.getNeuronByIndex(index).position
+	            textTexture = this.textTextures[index]
+	            textTexture.clear('white')
+	            textTexture.drawText(index, undefined, 30, 'black')
+	            textTexture.drawText(
+	                cellPosition.x + ", " + cellPosition.y + ", " + cellPosition.z,
+	                undefined,
+	                50,
+	                'black'
+	            )
+	            textTexture.texture.needsUpdate = true
+
 	            // Allow subclasses to mutate each cube.
 	            if (typeof(this._mutateCube) == 'function') {
-	                this._mutateCube(cube, cellValue, cellPosition.x, cellPosition.y, cellPosition.z)
+	                this._mutateCube(
+	                    cube, cellValue, cellOrigin.x, cellOrigin.y, cellOrigin.z
+	                )
 	            }
 	            cube.updateMatrix();
 	        }
 	    }
 	};
 
-	HighbrowLayerVisualization.prototype.getOffsetCenterPosition = function(cells, cubeSize, spacing, offset) {
+	HighbrowLayerVisualization.prototype.getOffsetCenterPosition =
+	function(cubeSize, spacing, offset) {
+	    var dims = this.layer.getDimensions()
 	    return {
-	        x: (offset.x * cubeSize * spacing.x) + (cells.getX() * cubeSize * spacing.x) / 2,
-	        y: (offset.y * cubeSize * spacing.y) + (cells.getY() * cubeSize * spacing.y) / 2,
+	        x: (offset.x * cubeSize * spacing.x)
+	            + (dims.x * cubeSize * spacing.x) / 2,
+	        y: (offset.y * cubeSize * spacing.y)
+	            + (dims.y * cubeSize * spacing.y) / 2,
 	        z: (offset.z * cubeSize * spacing.z)
 	    };
 	};
@@ -50400,11 +50608,11 @@
 	    var grid = new THREE.Group();
 
 	    // var position = this.position = this.getOffsetCenterPosition(
-	    //     this.cells, this.cubeSize, this.spacing, this.offset
+	    //     this.cubeSize, this.spacing, this.offset
 	    // );
 	    var position = this.position = {x: 0, y: 0, z: 0}
 
-	    this.meshCells = this._createMeshCells(this.cells, grid, position);
+	    this.meshCells = this._createMeshCells(grid, position);
 
 	    window.addEventListener('resize', function() {
 	        w = me.width = me.$container.innerWidth();
@@ -50435,7 +50643,7 @@
 	};
 
 	HighbrowLayerVisualization.prototype.redraw = function() {
-	    this._applyMeshCells(this.cells, this.meshCells, this.position);
+	    this._applyMeshCells(this.meshCells, this.position);
 	};
 
 	module.exports = HighbrowLayerVisualization;
