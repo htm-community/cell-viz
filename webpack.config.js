@@ -18,6 +18,8 @@ module.exports = {
         "./src/CompleteHtmVisualization.js",
         "./src/SingleLayerVisualization.js",
         "./src/SpToInputVisualization.js",
+        "./src/HighbrowLayerVisualization.js",
+        "./src/HighbrowColumnVisualization.js",
         "./src/HtmViz.js"
     ],
     output: {

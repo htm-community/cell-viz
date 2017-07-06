@@ -26,6 +26,7 @@ window.SingleLayerVisualization = require('./SingleLayerVisualization');
 window.SpToInputVisualization = require('./SpToInputVisualization');
 window.CompleteHtmVisualization = require('./CompleteHtmVisualization');
 window.HighbrowLayerVisualization = require('./HighbrowLayerVisualization');
+window.HighbrowColumnVisualization = require('./HighbrowColumnVisualization');
 window.HtmCells = require('./HtmCells');
 window.InputCells = require('./InputCells');
 window.HtmMiniColumns = require('./HtmMiniColumns');
