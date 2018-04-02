@@ -23,6 +23,12 @@ module.exports = {
         "./src/HighbrowColumnVisualization.js",
         "./src/HtmViz.js"
     ],
+    module: {
+        rules: [
+            { test: path.join(__dirname, "src"),
+                loader: "babel-loader" }
+        ]
+    },
     output: {
         path: __dirname + "/bin",
         filename: `cell-viz-${version}.bundle.js`

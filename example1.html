@@ -10,51 +10,82 @@
     </head>
     <body>
 
-        <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
-        <script src="bin/cell-viz-1.0.1.bundle.js"></script>
+        <script src="https://threejs.org/build/three.min.js"></script>
+        <script src="https://rhyolight.github.io/lowbrow/bin/highbrow-0.1.0.bundle.js"></script>
+        <script src="bin/cell-viz-1.2.bundle.js"></script>
 
         <script>
 
-            $(function() {
-
-                // The Cells interface is how to update the visualization inside the canvas.
-                var cells = new HtmCells(10, 10, 4);
-
-                // The HtmCellVisualization object handles all interactions with the DOM.
-                var cellviz = new SingleLayerVisualization(cells, {offset: {z: -30}});
-
-                cells.update(0, 0, 0, {color: 1});
-                cells.update(cells.getX() - 1, cells.getY() - 1, cells.getZ() - 1, {color: 2});
-
-                colorCellsRandomly(cells);
-
-                // Renders the canvas with empty cells into the DOM and canvas.
-                cellviz.render({initialDistance: 100});
-
-                setInterval(function() {
-                    colorCellsRandomly(cells);
-                    cellviz.redraw();
-                }, 500);
-
-                function randomHexColor() {
-                    return Math.floor(Math.random()*16777215);
-                }
-
-                function colorCellsRandomly(myCells) {
-                    for (var cx = 0; cx < cells.getX(); cx++) {
-                        for (var cy = 0; cy < cells.getY(); cy++) {
-                            for (var cz = 0; cz < cells.getZ(); cz++) {
-                                myCells.update(
-                                    cx, cy, cz,
-                                    {color: randomHexColor()}
-                                );
+        (function() {
+            // The scale is same as "cube size". This makes the cubes 100
+            // pixels.
+            const scale = 100
+            const oneColTwoLayers = {
+                name: "one column, two layers",
+                origin: {x: 0, y: 0, z: 0},
+                scale: scale,
+                corticalColumns: [{
+                    // Puts one cell between layers
+                    spacing: scale,
+                    name: "column 1",
+                    layers: [
+                        {
+                            name: "layer 4",
+                            miniColumns: false,
+                            neuronCount: 4*3*4,
+                            dimensions: {
+                                x: 4, y: 3, z: 4
+                            }
+                        },
+                        {
+                            name: "layer 2/3",
+                            miniColumns: false,
+                            neuronCount: 5*3*5,
+                            dimensions: {
+                                x: 5, y: 3, z: 5
+                            }
+                        },
+                        {
+                            name: "input space",
+                            miniColumns: false,
+                            neuronCount: 10*1*10,
+                            dimensions: {
+                                x: 10, y: 1, z: 10
                             }
                         }
-                    }
-                }
+                    ]
+                }]
+            }
+            var network = Lowbrow.createHtmNetwork(oneColTwoLayers)
+            var column = network.getCorticalColumns()[0]
 
-            });
+            var cellviz = new HighbrowColumnVisualization(column, {cubeSize: scale});
 
+            animateCells(column);
+
+            // Renders the canvas with empty cells into the DOM and canvas.
+            cellviz.render();
+
+            setInterval(function() {
+                animateCells(column);
+                cellviz.redraw();
+            }, 500);
+
+            function animateCells(column) {
+                // We're going straight to the Highbrow objects to
+                // update neuron states. We can access all the highbrow
+                // state from the layer directly and change it as we like.
+                column.getLayers().forEach(function(layer) {
+                    layer.getNeurons().forEach(function(neuron) {
+                        if (Math.random() >= 0.98) {
+                            neuron.activate()
+                        } else {
+                            neuron.deactivate()
+                        }
+                    });
+                });
+            }
+        }());
         </script>
     </body>
 </html>
