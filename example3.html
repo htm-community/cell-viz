@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=utf-8>
+        <title>Cell Regions</title>
+        <style>
+            body { margin: 0; }
+            canvas { width: 100%; height: 100% }
+        </style>
+    </head>
+    <body>
+
+        <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
+        <script src="out/dyson.js"></script>
+
+        <script>
+
+            $(function() {
+
+                // The Cells interface is how to update the visualization inside the canvas.
+                var cells = new HtmCells(10, 10, 4);
+
+                // The HtmCellVisualization object handles all interactions with the DOM.
+                var cellviz = new SingleLayerVisualization(cells, {spacing: 1.4});
+
+                // cells.update(0, 0, 0, {color: 1});
+                // cells.update(cells.getX() - 1, cells.getY() - 1, cells.getZ() - 1, {color: 2});
+
+                cells.updateAll({color: 0xFFFFFF});
+
+                // Renders the canvas with empty cells into the DOM and canvas.
+                cellviz.render();
+
+
+            });
+
+        </script>
+    </body>
+</html>

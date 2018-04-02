@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=utf-8>
+        <title>Cell Regions</title>
+        <style>
+            body { margin: 0; }
+            canvas { width: 100%; height: 100% }
+        </style>
+    </head>
+    <body>
+
+        <script src="https://code.jquery.com/jquery-3.1.0.slim.min.js"></script>
+        <script src="out/dyson.js"></script>
+
+        <script>
+
+            $(function() {
+
+                // The Cells interface is how to update the visualization inside the canvas.
+                var spCells = new HtmCells(10, 10, 4);
+
+                // The Input space
+                var inputCells = new HtmCells(32, 32, 1);
+
+                // The HtmCellVisualization object handles all interactions with the DOM.
+                var cellviz = new SpToInputVisualization(inputCells, spCells);
+
+                // Clear them out.
+                spCells.updateAll({color: 0xFFFFFF});
+                inputCells.updateAll({color: 0xFFFFFF});
+
+                spCells.update(0, 0, 0, {color: 0xFFFF00});
+                spCells.update(spCells.getX() - 1, spCells.getY() - 1, spCells.getZ() - 1, {color: 0xFF0000});
+
+                inputCells.update(0, 0, 0, {color: 0xFFFF00});
+                inputCells.update(inputCells.getX() - 1, inputCells.getY() - 1, inputCells.getZ() - 1, {color: 0xFF0000});
+
+                // Renders the canvas with empty cells into the DOM and canvas.
+                cellviz.render();
+
+                function cellClicked(cellData) {
+                    var cells;
+                    console.log(cellData);
+                    if (cellData.type == 'inputCells') cells = inputCells;
+                    else cells = spCells;
+                    cells.update(cellData.x, cellData.y, cellData.z, {color: 0xFFFF00});
+                    cellviz.redraw();
+                }
+
+                function onDocumentMouseDown( event ) {
+                	// the following line would stop any other event handler from firing
+                	// (such as the mouse's TrackballControls)
+                	// event.preventDefault();
+
+                	// update the mouse variable
+                	var x = ( event.clientX / cellviz.renderer.domElement.clientWidth ) * 2 - 1;
+                	var y = - ( event.clientY / cellviz.renderer.domElement.clientHeight ) * 2 + 1;
+
+                    // find intersections
+                	// create a Ray with origin at the mouse position
+                	//   and direction into the scene (camera direction)
+                	var vector = new THREE.Vector3( x, y, 1 );
+                    vector.unproject(cellviz.camera);
+                	var ray = new THREE.Raycaster( cellviz.camera.position, vector.sub( cellviz.camera.position ).normalize() );
+                	// create an array containing all objects in the scene with which the ray intersects
+                	var intersects = ray.intersectObjects(cellviz.getTargets());
+
+                	// if there is one (or more) intersections
+                	if ( intersects.length > 0 ) {
+                        cellClicked(intersects[0].object._cellData);
+                	}
+                }
+
+                var canvas = document.getElementsByTagName('canvas')[0];
+                canvas.addEventListener( 'mousedown', onDocumentMouseDown, false );
+
+            });
+
+        </script>
+    </body>
+</html>
