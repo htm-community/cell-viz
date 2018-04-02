@@ -1,1 +1,0 @@
-When you run webpack, this directory will contain the bundle.
