@@ -14,9 +14,9 @@ cp -r out/* "$tmp/cell-viz/."
 
 git checkout gh-pages
 
-ls "$tmp/cell-viz"
+ls -l "$tmp/cell-viz"
 ls "$tmp"
-cp "$tmp/cell-viz/*" bin/.
+cp "$tmp/cell-viz/*.js" bin/.
 
 git add bin
 
