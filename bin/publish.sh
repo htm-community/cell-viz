@@ -6,7 +6,7 @@ npm install .
 npm run build
 git add out
 git commit -m "Updating binaries"
-git push origin
+git push origin 1.2
 
 rm -rf "$tmp/cell-viz"
 cp -r out "$tmp/cell-viz"
