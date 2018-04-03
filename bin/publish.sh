@@ -10,6 +10,7 @@ cp -r out "$tmp/cell-viz"
 
 git checkout gh-pages
 
+rm -rf "$tmp/cell-viz/*"
 cp -r "$tmp/cell-viz" bin
 
 git add bin
