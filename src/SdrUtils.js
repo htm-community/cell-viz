@@ -146,11 +146,6 @@ function adjustTo(sdr, targetDensity) {
         targetIndices = onBits
     }
 
-    console.log(
-        'adjustTo %s => %s results in %s bits changed to %s',
-        currentDensity, targetDensity, diffBits, bitType
-    )
-
     for (let i = 0; i < diffBits; i++) {
         let toFlip = targetIndices.splice(getRandomInt(0, targetIndices.length - 1), 1)[0]
         out[toFlip] = bitType
