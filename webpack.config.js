@@ -13,6 +13,7 @@ module.exports = {
         "./src/threejs/controls/FlyControls.js",
         "./src/threejs/textures/threex.dynamictexture.js",
         "./src/SdrUtils.js",
+        "./src/SdrDrawing.js",
         "./src/HtmCells.js",
         "./src/InputCells.js",
         "./src/HtmMiniColumns.js",

@@ -39,8 +39,8 @@ function overflowSafeUniqueness(n, w) {
 
 function getRandom(n, w) {
     let out = []
-    let randomIndex = undefined
-    let sparsity = undefined
+    let randomIndex
+    let sparsity
 
     if (w === undefined) {
         w = n * DEFAULT_SPARSITY
@@ -56,7 +56,7 @@ function getRandom(n, w) {
     while (population(out) / n < sparsity) {
         // Make a random 0 bit into a 1.
         randomIndex = getRandomInt(0, n)
-        if (out[randomIndex] == 0) {
+        if (out[randomIndex] === 0) {
             out[randomIndex] = 1
         }
     }
@@ -97,6 +97,13 @@ function population(sdr) {
     return sdr.reduce(function(sum, n) {
         return sum + n
     }, 0)
+}
+
+function sparsity(sdr) {
+    let onBits = sdr.filter((bit) => {
+        return bit === 1
+    }).length
+    return onBits / sdr.length
 }
 
 
@@ -151,6 +158,8 @@ module.exports = {
     getEmpty: getEmpty,
     getActiveBits: getActiveBits,
     getInactiveBits: getInactiveBits,
+    population: population,
+    sparsity: sparsity,
     invert: invert,
     addNoise: addNoise,
     addBitNoise: addBitNoise,

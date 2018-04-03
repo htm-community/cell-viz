@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=utf-8>
+    <title>SDR Drawings</title>
+    <style>
+        body { margin: 0; }
+        rect {
+            stroke: #9b9b9b;
+            shape-rendering: crispEdges;
+        }
+        rect.on {
+            fill: steelblue;
+        }
+        rect.off {
+            fill: white;
+        }
+
+    </style>
+</head>
+<body>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="out/cell-viz-1.2.0.min.js"></script>
+
+<script>
+
+    $(function() {
+
+        const cfg = {
+            InputSpaceDimensions: 1000,
+            MiniColumnCount: 500,
+            ReceptiveFieldPerc: .8,
+            ProximalConnectionThreshold: .2,
+            ProximalActivityThreshold: .5,
+            InitialProximalConnectionVariation: .3,
+            MiniColumnInhibitionPerc: .2,
+        }
+        function getRandomReceptiveField(receptiveFieldPerc, dimensions) {
+            let n = dimensions
+            let w = parseInt(receptiveFieldPerc * n)
+            let potentialPool = SdrUtils.getRandom(n, w)
+            return potentialPool
+        }
+        let pool = getRandomReceptiveField(cfg.ReceptiveFieldPerc, cfg.InputSpaceDimensions)
+        let sdr = new SdrDrawing(pool, 'receptiveFieldDemo')
+        sdr.draw({
+            spartan: true,
+            size: 60
+        })
+
+    });
+
+</script>
+
+<div id="receptiveFieldDemo"></div>
+
+</body>
+</html>

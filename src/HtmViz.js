@@ -31,3 +31,4 @@ window.HtmCells = require('./HtmCells');
 window.InputCells = require('./InputCells');
 window.HtmMiniColumns = require('./HtmMiniColumns');
 window.SdrUtils = require('./SdrUtils');
+window.SdrDrawing = require('./SdrDrawing');
