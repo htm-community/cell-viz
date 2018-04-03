@@ -53,7 +53,7 @@ function getRandom(n, w) {
         out.push(0)
     }
     // If not sparse enough, randomly flip 0 bits to 1.
-    while (this.population(out) / n < sparsity) {
+    while (population(out) / n < sparsity) {
         // Make a random 0 bit into a 1.
         randomIndex = getRandomInt(0, n)
         if (out[randomIndex] == 0) {
@@ -92,6 +92,13 @@ function getInactiveBits(sdr) {
     })
     return inactive;
 }
+
+function population(sdr) {
+    return sdr.reduce(function(sum, n) {
+        return sum + n
+    }, 0)
+}
+
 
 /*********
  UPDATE
