@@ -116,7 +116,7 @@ function invert(sdr) {
 // turning off X percent of the on bits.
 function addNoise(sdr, percentNoise) {
     // The noiseLevel will be the number of total bits to flip.
-    let noiseLevel = Math.floor(this.population(sdr) * percentNoise);
+    let noiseLevel = Math.floor(population(sdr) * percentNoise);
     return this.addBitNoise(sdr, noiseLevel)
 }
 
