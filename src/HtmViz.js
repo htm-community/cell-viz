@@ -30,3 +30,4 @@ window.HighbrowColumnVisualization = require('./HighbrowColumnVisualization');
 window.HtmCells = require('./HtmCells');
 window.InputCells = require('./InputCells');
 window.HtmMiniColumns = require('./HtmMiniColumns');
+window.SdrUtils = requie('./SdrUtils');
