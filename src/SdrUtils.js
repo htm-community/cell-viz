@@ -30,6 +30,12 @@ function overflowSafeUniqueness(n, w) {
     return math.divide(nf, math.multiply(wf, nwf));
 }
 
+function closeEnoughSparsity(a, b) {
+    let diff = Math.abs(a - b)
+    // Close enough if within one percent.
+    return diff <= 0.01
+}
+
 /***** PUBLIC functions start here *****/
 
 
@@ -105,6 +111,7 @@ function sparsity(sdr) {
     }).length
     return onBits / sdr.length
 }
+let density = sparsity
 
 
 /*********
@@ -117,6 +124,39 @@ function invert(sdr) {
         if (bit === 0) return 1;
         return 0;
     });
+}
+
+function adjustTo(sdr, targetDensity) {
+    let out = sdr.slice()
+
+    let n = sdr.length
+    let currentDensity = density(sdr)
+    let diff = targetDensity - currentDensity
+    let diffBits = Math.abs(parseInt(diff * n))
+    let onBits = getActiveBits(sdr)
+    let offBits = getInactiveBits(sdr)
+
+
+    // adjust by turning bits on
+    let bitType = 1
+    let targetIndices = offBits
+    // adjust by turning bits off
+    if (targetDensity < currentDensity) {
+        bitType = 0
+        targetIndices = onBits
+    }
+
+    console.log(
+        'adjustTo %s => %s results in %s bits changed to %s',
+        currentDensity, targetDensity, diffBits, bitType
+    )
+
+    for (let i = 0; i < diffBits; i++) {
+        let toFlip = targetIndices.splice(getRandomInt(0, targetIndices.length - 1), 1)[0]
+        out[toFlip] = bitType
+    }
+
+    return out
 }
 
 // Adds a percent noise by turning on X percent of the off bits and
@@ -160,7 +200,9 @@ module.exports = {
     getInactiveBits: getInactiveBits,
     population: population,
     sparsity: sparsity,
+    density: density,
     invert: invert,
     addNoise: addNoise,
     addBitNoise: addBitNoise,
+    adjustTo: adjustTo,
 }

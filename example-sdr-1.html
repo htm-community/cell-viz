@@ -4,18 +4,7 @@
     <meta charset=utf-8>
     <title>SDR Drawings</title>
     <style>
-        body { margin: 0; }
-        rect {
-            stroke: #9b9b9b;
-            shape-rendering: crispEdges;
-        }
-        rect.on {
-            fill: steelblue;
-        }
-        rect.off {
-            fill: white;
-        }
-
+        body { margin: 100px; }
     </style>
 </head>
 <body>
@@ -23,38 +12,40 @@
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script src="out/cell-viz-1.2.0.min.js"></script>
-
 <script>
 
     $(function() {
 
-        const cfg = {
-            InputSpaceDimensions: 1000,
-            MiniColumnCount: 500,
-            ReceptiveFieldPerc: .8,
-            ProximalConnectionThreshold: .2,
-            ProximalActivityThreshold: .5,
-            InitialProximalConnectionVariation: .3,
-            MiniColumnInhibitionPerc: .2,
-        }
         function getRandomReceptiveField(receptiveFieldPerc, dimensions) {
             let n = dimensions
             let w = parseInt(receptiveFieldPerc * n)
             let potentialPool = SdrUtils.getRandom(n, w)
             return potentialPool
         }
-        let pool = getRandomReceptiveField(cfg.ReceptiveFieldPerc, cfg.InputSpaceDimensions)
+        let pool = getRandomReceptiveField(.5, 1000)
         let sdr = new SdrDrawing(pool, 'receptiveFieldDemo')
-        sdr.draw({
-            spartan: true,
-            size: 60
-        })
+        let drawOptions = {
+            width: 1000,
+            height: 500,
+            cellSize: 14,
+            rowLength: 30,
+        }
+        sdr.draw(drawOptions)
+
+        $('input[type=range]').on('input', function () {
+            let targetDensity = parseInt(this.value) / 100
+            pool = SdrUtils.adjustTo(pool, targetDensity)
+            sdr = new SdrDrawing(pool, 'receptiveFieldDemo')
+            sdr.draw(drawOptions)
+        });
 
     });
 
 </script>
 
-<div id="receptiveFieldDemo"></div>
+<svg id="receptiveFieldDemo"></svg>
+<br/>
+<input type="range" min="0" max="100" value="50" id="receptiveFieldPercSlider">
 
 </body>
 </html>
