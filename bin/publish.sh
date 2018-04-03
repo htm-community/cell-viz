@@ -9,7 +9,8 @@ git commit -m "Updating binaries"
 git push origin 1.2
 
 rm -rf "$tmp/cell-viz"
-cp -r out "$tmp/cell-viz"
+mkdir "$tmp/cell-viz"
+cp -r out/* "$tmp/cell-viz/."
 
 git checkout gh-pages
 
