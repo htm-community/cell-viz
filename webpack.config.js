@@ -30,7 +30,7 @@ module.exports = {
         ]
     },
     output: {
-        path: __dirname + "/out",
+        path: __dirname + "/bin",
         filename: `cell-viz-${version}.min.js`
     }
 };
