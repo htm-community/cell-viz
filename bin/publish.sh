@@ -15,6 +15,7 @@ cp "$tmp/cell-viz/*" bin/.
 git add bin
 
 git commit -m "Publishing latest to gh-pages"
+git push origin gh-pages
 git push upstream gh-pages
 
 git checkout 1.2
