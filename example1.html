@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset=utf-8>
-        <title>Cell Regions</title>
+        <title>Lowbrow: Two Layers over Input Space</title>
         <style>
             body { margin: 0; }
             canvas { width: 100%; height: 100% }
@@ -61,6 +61,10 @@
             var column = network.getCorticalColumns()[0]
 
             var cellviz = new HighbrowColumnVisualization(column, {cubeSize: scale});
+            cellviz.camera.translateX(500)
+            cellviz.camera.translateY(2200)
+            cellviz.camera.translateZ(4000)
+            cellviz.camera.rotateX(-0.5)
 
             animateCells(column);
 
