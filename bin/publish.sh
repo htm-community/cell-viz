@@ -4,6 +4,9 @@ tmp="/tmp"
 
 npm install .
 npm run build
+git add out
+git commit -m "Updating binaries"
+git push origin
 
 rm -rf "$tmp/cell-viz"
 cp -r out "$tmp/cell-viz"
