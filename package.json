@@ -1,8 +1,7 @@
 {
   "name": "cell-viz",
   "version": "1.2.0",
-  "description": "Cell region visualizer",
-  "main": "index.js",
+  "description": "HTM Neuron population visualizer",
   "scripts": {
     "build": "./node_modules/.bin/webpack",
     "test": "echo \"Error: no test specified\" && exit 1",

@@ -1,7 +1,6 @@
-# Cell-viz
+# Cell-Viz
 
-This is an attempt at recreating an old illustration.  See it live at
-https://numenta.github.io/cell-viz/ or fiddle with it at http://jsfiddle.net/7tbm3mv1/4/.
+These is a collection of cell visualizations, originally created to visualize HTM systems. There is a 2D and 3D library. This is a work in progress. 
 
 ## Installation
 
@@ -10,16 +9,10 @@ https://numenta.github.io/cell-viz/ or fiddle with it at http://jsfiddle.net/7tb
 ## Usage
 -----
 
-Run a simple server suitable for development:
-
-    npm start
-
 Generate static assets:
 
     npm run build
 
-
-Use `bin/cell-viz-VERSION.bundle.js`;
 
 ## Examples
 --------
