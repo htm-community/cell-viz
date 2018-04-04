@@ -4,23 +4,25 @@
   "description": "Cell region visualizer",
   "main": "index.js",
   "scripts": {
-    "build": "webpack",
+    "build": "./node_modules/.bin/webpack",
     "test": "echo \"Error: no test specified\" && exit 1",
     "publish": "./bin/publish.sh"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.4",
+    "babel-preset-env": "^1.6.1",
     "math": "0.0.3",
     "mathjs": "^3.4.1",
+    "three": "^0.91.0",
     "three-collada-loader": "0.0.1",
     "three-obj-loader": "^1.0.2",
     "three-trackballcontrols": "0.0.5",
-    "three": "^0.91.0",
-    "webpack": "^1.13.1",
-    "webpack-dev-server": "^1.14.1",
-    "babel-core": "^6.25.0",
-    "babel-loader": "^7.1.0",
-    "babel-preset-env": "^1.5.2"
+    "webpack": "^4.5.0"
+  },
+  "devDependencies": {
+    "webpack-cli": "^2.0.13"
   }
 }

@@ -8,6 +8,7 @@ let pkg = JSON.parse(
 let version = pkg.version
 
 let config2D = {
+    mode: 'development',
     entry: [
         "./src/threejs/renderers/Projector.js",
         "./src/threejs/controls/FlyControls.js",
@@ -37,26 +38,25 @@ let config2D = {
     }
 }
 
-let config3D = {
-    entry: [
-        "./src/SdrUtils.js",
-        "./src/SdrDrawing.js",
-        "./src/HtmViz2d.js"
-    ],
-    module: {
-        rules: [
-            { test: path.join(__dirname, "src"),
-                loader: "babel-loader" }
-        ]
-    },
-    output: {
-        path: __dirname + "/out",
-        filename: `cell-viz-2d-${version}.min.js`
+//let config3D = {
+//    mode: 'development',
+//    entry: [
+//        "./src/SdrUtils.js",
+//        "./src/SdrDrawing.js",
+//        "./src/HtmViz2d.js"
+//    ],
+//    module: {
+//        rules: [
+//            { test: path.join(__dirname, "src"),
+//                loader: "babel-loader" }
+//        ]
+//    },
+//    output: {
+//        path: __dirname + "/out",
+//        filename: `cell-viz-2d-${version}.min.js`
+//
+//    }
+//}
 
-    }
-}
 
-
-module.exports = [
-    config2D, config3D
-];
+module.exports = config2D
