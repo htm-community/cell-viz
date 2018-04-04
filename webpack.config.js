@@ -7,13 +7,11 @@ let pkg = JSON.parse(
 )
 let version = pkg.version
 
-module.exports = {
+let config2D = {
     entry: [
         "./src/threejs/renderers/Projector.js",
         "./src/threejs/controls/FlyControls.js",
         "./src/threejs/textures/threex.dynamictexture.js",
-        "./src/SdrUtils.js",
-        "./src/SdrDrawing.js",
         "./src/HtmCells.js",
         "./src/InputCells.js",
         "./src/HtmMiniColumns.js",
@@ -23,7 +21,27 @@ module.exports = {
         "./src/SpToInputVisualization.js",
         "./src/HighbrowLayerVisualization.js",
         "./src/HighbrowColumnVisualization.js",
-        "./src/HtmViz.js"
+        "./src/HtmViz3d.js"
+    ],
+    module: {
+        rules: [
+            {
+                test: path.join(__dirname, "src"),
+                loader: "babel-loader"
+            }
+        ]
+    },
+    output: {
+        path: __dirname + "/out",
+        filename: `cell-viz-3d-${version}.min.js`
+    }
+}
+
+let config3D = {
+    entry: [
+        "./src/SdrUtils.js",
+        "./src/SdrDrawing.js",
+        "./src/HtmViz2d.js"
     ],
     module: {
         rules: [
@@ -33,6 +51,12 @@ module.exports = {
     },
     output: {
         path: __dirname + "/out",
-        filename: `cell-viz-${version}.min.js`
+        filename: `cell-viz-2d-${version}.min.js`
+
     }
-};
+}
+
+
+module.exports = [
+    config2D, config3D
+];
