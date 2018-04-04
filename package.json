@@ -5,7 +5,7 @@
   "scripts": {
     "build": "./node_modules/.bin/webpack",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "publish": "./bin/publish.sh"
+    "deploy-docs": "./bin/publish.sh"
   },
   "author": "Matthew Taylor <matt@numenta.org>",
   "license": "MIT",

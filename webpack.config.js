@@ -58,5 +58,4 @@ let config2D = {
 //    }
 //}
 
-
 module.exports = config2D
