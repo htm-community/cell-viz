@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "publish": "./bin/publish.sh"
+    "deploy-docs": "./bin/publish.sh"
   },
   "author": "",
   "license": "MIT",
