@@ -8,6 +8,7 @@ let pkg = JSON.parse(
 let version = pkg.version
 
 let config2D = {
+    mode: 'development',
     entry: [
         "./src/threejs/renderers/Projector.js",
         "./src/threejs/controls/FlyControls.js",
@@ -38,6 +39,7 @@ let config2D = {
 }
 
 let config3D = {
+    mode: 'development',
     entry: [
         "./src/SdrUtils.js",
         "./src/SdrDrawing.js",
