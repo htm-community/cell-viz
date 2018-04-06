@@ -40,6 +40,16 @@ SdrDrawing.prototype.draw = function(options) {
             })
             .attr('width', opts.cellSize)
             .attr('height', opts.cellSize)
+        cells.append('circle')
+            .attr('cx', (d, i) => {
+                let offset = i % opts.rowLength;
+                return offset * opts.cellSize;
+            })
+            .attr('cy', function(d, i) {
+                let offset = Math.floor(i / opts.rowLength);
+                return offset * opts.cellSize;
+            })
+            .attr('r', 10)
     }
 
     // Update
