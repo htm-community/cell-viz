@@ -7,12 +7,12 @@ let defaultOpts = {
     rowLength: 100,
 }
 
-function SdrDrawing(bits, element) {
+function ReceptiveField(bits, element) {
     this.bits = bits
     this.el = element
 }
 
-SdrDrawing.prototype.draw = function(options) {
+ReceptiveField.prototype.draw = function(options) {
     let sdrId = this.el
     let opts = Object.assign(defaultOpts, options)
     let svg = d3.select('#' + this.el)
@@ -170,4 +170,4 @@ SdrDrawing.prototype.draw = function(options) {
 
 }
 
-module.exports = SdrDrawing
+module.exports = ReceptiveField
