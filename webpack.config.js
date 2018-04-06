@@ -7,7 +7,7 @@ let pkg = JSON.parse(
 )
 let version = pkg.version
 
-let config2D = {
+let config3d = {
     mode: 'development',
     entry: [
         "./src/threejs/renderers/Projector.js",
@@ -33,12 +33,12 @@ let config2D = {
         ]
     },
     output: {
-        path: __dirname + "/out",
+        path: __dirname + "/dist",
         filename: `cell-viz-3d-${version}.min.js`
     }
 }
 
-//let config3D = {
+//let config2d = {
 //    mode: 'development',
 //    entry: [
 //        "./src/SdrUtils.js",
@@ -58,4 +58,4 @@ let config2D = {
 //    }
 //}
 
-module.exports = config2D
+module.exports = config3d
