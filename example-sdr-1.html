@@ -9,6 +9,15 @@
 </head>
 <body>
 
+<svg id="receptiveFieldDemo"></svg>
+<br/>
+<input type="range" min="0" max="100" value="90" id="receptiveFieldPercSlider" />
+receptive field: <span class="receptiveFieldPercDisplay"></span>%
+<br/>
+<input type="range" min="0" max="100" value="50" id="connectionThresholdSlider" />
+connection threshold: <span class="connectionThresholdDisplay"></span>
+
+
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script src="dist/cell-viz-2d-1.3.1.min.js"></script>
@@ -24,7 +33,9 @@
         }
         let inputSpace = 1000
         let $connectionThresholdSlider = $('#connectionThresholdSlider')
-        let threshold = parseInt($connectionThresholdSlider.val()) / 100
+        let $connectionThresholdDisplays = $('.connectionThresholdDisplay')
+        let $receptiveFieldPercSlider = $('#receptiveFieldPercSlider')
+        let $receptiveFieldPercDisplay = $('.receptiveFieldPercDisplay')
         let drawOptions = {
             width: 1000,
             height: 500,
@@ -32,6 +43,7 @@
             rowLength: 30,
         }
         let pool = getRandomReceptiveField(.5, inputSpace)
+        let perms
 
         function updatePerms() {
             perms = d3.range(inputSpace)
@@ -43,6 +55,9 @@
         }
 
         function renderDisplay() {
+            let threshold = parseInt($connectionThresholdSlider.val()) / 100
+            $connectionThresholdDisplays.html(threshold)
+            $receptiveFieldPercDisplay.html($receptiveFieldPercSlider.val())
             let rcDrawing = new ReceptiveField(perms, threshold, 'receptiveFieldDemo')
             rcDrawing.draw(drawOptions)
         }
@@ -50,8 +65,8 @@
         updatePerms()
         renderDisplay()
 
-        $('#receptiveFieldPercSlider').on('input', () => {
-            let targetDensity = parseInt(this.value) / 100
+        $receptiveFieldPercSlider.on('input', () => {
+            let targetDensity = parseInt($receptiveFieldPercSlider.val()) / 100
             pool = SdrUtils.adjustTo(pool, targetDensity)
             updatePerms()
             renderDisplay()
@@ -65,12 +80,6 @@
     });
 
 </script>
-
-<svg id="receptiveFieldDemo"></svg>
-<br/>
-<input type="range" min="0" max="100" value="50" id="receptiveFieldPercSlider">
-<br/>
-<input type="range" min="0" max="100" value="50" id="connectionThresholdSlider">
 
 </body>
 </html>

@@ -17,7 +17,10 @@ let defaultOpts = {
     height: 400,
     cellSize: 10,
     rowLength: 100,
-    threshold: 0.85,
+    threshold: 0.5,
+    onColor: 'skyblue',
+    offColor: 'white',
+    connectionColor: 'cornflowerblue'
 }
 
 function ReceptiveField(permanences, threshold, element) {
@@ -27,7 +30,7 @@ function ReceptiveField(permanences, threshold, element) {
 }
 
 ReceptiveField.prototype.draw = function(options) {
-    let sdrId = this.el
+    let threshold = this.threshold
     let opts = Object.assign(defaultOpts, options)
     let perms = this.permanences
     let svg = d3.select('#' + this.el)
@@ -38,8 +41,8 @@ ReceptiveField.prototype.draw = function(options) {
 
     function renderCell(r, c) {
         r.attr('fill', (d) => {
-                if (d !== null) return 'steelblue'
-                return 'white'
+                if (d !== null) return opts.onColor
+                return opts.offColor
             })
             .attr('stroke', 'darkgrey')
             .attr('stroke-width', 0.5)
@@ -55,9 +58,10 @@ ReceptiveField.prototype.draw = function(options) {
             .attr('width', opts.cellSize)
             .attr('height', opts.cellSize)
         c.attr('fill', (d, i) => {
-                if (perms[i] === 0) return 'none'
-                if (d < opts.threshold) return 'none'
-                return '#' + getGreenToRed(d * 100)
+                if (perms[i] === null) return 'none'
+                if (d < threshold) return 'none'
+                //return '#' + getGreenToRed(d * 100)
+                return opts.connectionColor
             })
             .attr('fill-opacity', 1)
             .attr('cx', function(d, i) {
@@ -68,7 +72,7 @@ ReceptiveField.prototype.draw = function(options) {
                 let offset = Math.floor(i / opts.rowLength);
                 return offset * opts.cellSize + (opts.cellSize / 2);
             })
-            .attr('r', opts.cellSize / 6)
+            .attr('r', opts.cellSize / 4)
     }
 
     // Update
