@@ -22,22 +22,45 @@
             let potentialPool = SdrUtils.getRandom(n, w)
             return potentialPool
         }
-        let pool = getRandomReceptiveField(.5, 1000)
-        let sdr = new ReceptiveField(pool, 'receptiveFieldDemo')
+        let inputSpace = 1000
+        let $connectionThresholdSlider = $('#connectionThresholdSlider')
+        let threshold = parseInt($connectionThresholdSlider.val()) / 100
         let drawOptions = {
             width: 1000,
             height: 500,
             cellSize: 14,
             rowLength: 30,
         }
-        sdr.draw(drawOptions)
+        let pool = getRandomReceptiveField(.5, inputSpace)
 
-        $('input[type=range]').on('input', function () {
+        function updatePerms() {
+            perms = d3.range(inputSpace)
+                .map(d3.randomBates(20))
+                .map((p, i) => {
+                    if (pool[i] === 0) return null
+                    return p
+                })
+        }
+
+        function renderDisplay() {
+            let rcDrawing = new ReceptiveField(perms, threshold, 'receptiveFieldDemo')
+            rcDrawing.draw(drawOptions)
+        }
+
+        updatePerms()
+        renderDisplay()
+
+        $('#receptiveFieldPercSlider').on('input', () => {
             let targetDensity = parseInt(this.value) / 100
             pool = SdrUtils.adjustTo(pool, targetDensity)
-            sdr = new ReceptiveField(pool, 'receptiveFieldDemo')
-            sdr.draw(drawOptions)
-        });
+            updatePerms()
+            renderDisplay()
+        })
+
+        $connectionThresholdSlider.on('input', () => {
+            updatePerms()
+            renderDisplay()
+        })
 
     });
 
@@ -46,6 +69,8 @@
 <svg id="receptiveFieldDemo"></svg>
 <br/>
 <input type="range" min="0" max="100" value="50" id="receptiveFieldPercSlider">
+<br/>
+<input type="range" min="0" max="100" value="50" id="connectionThresholdSlider">
 
 </body>
 </html>

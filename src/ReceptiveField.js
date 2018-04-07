@@ -1,28 +1,44 @@
+/* From http://stackoverflow.com/questions/7128675/from-green-to-red-color-depend-on-percentage */
+function getGreenToRed(percent){
+    var r, g;
+    percent = 100 - percent;
+    r = percent < 50 ? 255 : Math.floor(255-(percent*2-100)*255/100);
+    g = percent > 50 ? 255 : Math.floor((percent*2)*255/100);
+    return rgbToHex(r, g, 0);
+}
+
+/* From http://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb */
+function rgbToHex(r, g, b) {
+    return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
 let defaultOpts = {
     width: 400,
     height: 400,
     cellSize: 10,
     rowLength: 100,
+    threshold: 0.85,
 }
 
-function ReceptiveField(bits, element) {
-    this.bits = bits
+function ReceptiveField(permanences, threshold, element) {
+    this.permanences = permanences
+    this.threshold = threshold
     this.el = element
 }
 
 ReceptiveField.prototype.draw = function(options) {
     let sdrId = this.el
     let opts = Object.assign(defaultOpts, options)
+    let perms = this.permanences
     let svg = d3.select('#' + this.el)
         .attr('width', opts.width)
         .attr('height', opts.height)
 
-    function treatCells(cells) {
-        cells.attr('id', (d, i) => {
-                return sdrId + '-' + i
-            })
-            .attr('fill', (d) => {
-                if (d === 1) return 'steelblue'
+    svg.html('')
+
+    function renderCell(r, c) {
+        r.attr('fill', (d) => {
+                if (d !== null) return 'steelblue'
                 return 'white'
             })
             .attr('stroke', 'darkgrey')
@@ -38,28 +54,36 @@ ReceptiveField.prototype.draw = function(options) {
             })
             .attr('width', opts.cellSize)
             .attr('height', opts.cellSize)
-        cells.append('circle')
-            .attr('cx', (d, i) => {
+        c.attr('fill', (d, i) => {
+                if (perms[i] === 0) return 'none'
+                if (d < opts.threshold) return 'none'
+                return '#' + getGreenToRed(d * 100)
+            })
+            .attr('fill-opacity', 1)
+            .attr('cx', function(d, i) {
                 let offset = i % opts.rowLength;
-                return offset * opts.cellSize;
+                return offset * opts.cellSize + (opts.cellSize / 2);
             })
             .attr('cy', function(d, i) {
                 let offset = Math.floor(i / opts.rowLength);
-                return offset * opts.cellSize;
+                return offset * opts.cellSize + (opts.cellSize / 2);
             })
-            .attr('r', 10)
+            .attr('r', opts.cellSize / 6)
     }
 
     // Update
-    let rectCells = svg.selectAll('rect').data(this.bits)
-    treatCells(rectCells)
+    let rects = svg.selectAll('rect').data(perms)
+    let circs = svg.selectAll('circles').data(perms)
+    renderCell(rects, circs)
 
     // Enter
-    let newRectCells = rectCells.enter().append('rect')
-    treatCells(newRectCells)
+    let newRects = rects.enter().append('rect')
+    let newCircs = circs.enter().append('circle')
+    renderCell(newRects, newCircs)
 
     // Exit
-    rectCells.exit().remove()
+    rects.exit().remove()
+    circs.exit().remove()
 
 }
 
