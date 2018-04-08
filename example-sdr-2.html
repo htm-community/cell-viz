@@ -13,9 +13,6 @@
 <br/>
 <input type="range" min="0" max="100" value="90" id="receptiveFieldPercSlider" />
 receptive field: <span class="receptiveFieldPercDisplay"></span>%
-<br/>
-<input type="range" min="0" max="100" value="50" id="connectionThresholdSlider" />
-connection threshold: <span class="connectionThresholdDisplay"></span>
 
 
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
@@ -32,49 +29,27 @@ connection threshold: <span class="connectionThresholdDisplay"></span>
             return potentialPool
         }
         let inputSpace = 1000
-        let $connectionThresholdSlider = $('#connectionThresholdSlider')
-        let $connectionThresholdDisplays = $('.connectionThresholdDisplay')
         let $receptiveFieldPercSlider = $('#receptiveFieldPercSlider')
         let $receptiveFieldPercDisplay = $('.receptiveFieldPercDisplay')
         let drawOptions = {
             width: 1000,
             height: 500,
             cellSize: 14,
-            rowLength: 30
+            rowLength: 30,
         }
         let pool = getRandomReceptiveField(.5, inputSpace)
-        let perms
-
-        function updatePerms() {
-            perms = d3.range(inputSpace)
-                .map(d3.randomBates(20))
-                .map((p, i) => {
-                    if (pool[i] === 0) return null
-                    return p
-                })
-        }
 
         function renderDisplay() {
-            let threshold = parseInt($connectionThresholdSlider.val()) / 100
-            $connectionThresholdDisplays.html(threshold)
             $receptiveFieldPercDisplay.html($receptiveFieldPercSlider.val())
-            let rcDrawing = new ReceptiveField(perms, 'receptiveFieldDemo')
-            drawOptions.threshold = parseInt($connectionThresholdSlider.val()) / 100
+            let rcDrawing = new ReceptiveField(pool, 'receptiveFieldDemo')
             rcDrawing.draw(drawOptions)
         }
 
-        updatePerms()
         renderDisplay()
 
         $receptiveFieldPercSlider.on('input', () => {
             let targetDensity = parseInt($receptiveFieldPercSlider.val()) / 100
             pool = SdrUtils.adjustTo(pool, targetDensity)
-            updatePerms()
-            renderDisplay()
-        })
-
-        $connectionThresholdSlider.on('input', () => {
-            updatePerms()
             renderDisplay()
         })
 

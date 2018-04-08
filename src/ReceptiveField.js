@@ -17,21 +17,20 @@ let defaultOpts = {
     height: 400,
     cellSize: 10,
     rowLength: 100,
-    threshold: 0.5,
+    threshold: undefined,
     onColor: 'skyblue',
     offColor: 'white',
     connectionColor: 'cornflowerblue'
 }
 
-function ReceptiveField(permanences, threshold, element) {
+function ReceptiveField(permanences, element) {
     this.permanences = permanences
-    this.threshold = threshold
     this.el = element
 }
 
 ReceptiveField.prototype.draw = function(options) {
-    let threshold = this.threshold
     let opts = Object.assign(defaultOpts, options)
+    let threshold = opts.threshold
     let perms = this.permanences
     let svg = d3.select('#' + this.el)
         .attr('width', opts.width)
@@ -41,7 +40,8 @@ ReceptiveField.prototype.draw = function(options) {
 
     function renderCell(r, c) {
         r.attr('fill', (d) => {
-                if (d !== null) return opts.onColor
+                if (d === null) return opts.offColor
+                if (d > 0) return opts.onColor
                 return opts.offColor
             })
             .attr('stroke', 'darkgrey')
@@ -58,10 +58,15 @@ ReceptiveField.prototype.draw = function(options) {
             .attr('width', opts.cellSize)
             .attr('height', opts.cellSize)
         c.attr('fill', (d, i) => {
-                if (perms[i] === null) return 'none'
-                if (d < threshold) return 'none'
-                //return '#' + getGreenToRed(d * 100)
-                return opts.connectionColor
+                // If no data, means it is empty or zero bit, no circles.
+                if (d === null) return 'none'
+                // If there is a threshold defined, we'll assume the perms are
+                // not binary, but are permanences values, and will render
+                // circles.
+                if (threshold !== undefined) {
+                    if (d > threshold) return '#' + getGreenToRed(d * 100)
+                }
+                return 'none'
             })
             .attr('fill-opacity', 1)
             .attr('cx', function(d, i) {
