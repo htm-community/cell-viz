@@ -18,9 +18,10 @@ let defaultOpts = {
     cellSize: 10,
     rowLength: 100,
     threshold: undefined,
+    gradientFill: false,
     onColor: 'skyblue',
     offColor: 'white',
-    connectionColor: 'cornflowerblue'
+    connectionColor: 'royalblue'
 }
 
 function ReceptiveField(permanences, element) {
@@ -41,7 +42,10 @@ ReceptiveField.prototype.draw = function(options) {
     function renderCell(r, c) {
         r.attr('fill', (d) => {
                 if (d === null) return opts.offColor
-                if (d > 0) return opts.onColor
+                if (d > 0) {
+                    if (opts.gradientFill) return '#' + getGreenToRed(d * 100)
+                    else return opts.onColor
+                }
                 return opts.offColor
             })
             .attr('stroke', 'darkgrey')
@@ -64,7 +68,7 @@ ReceptiveField.prototype.draw = function(options) {
                 // not binary, but are permanences values, and will render
                 // circles.
                 if (threshold !== undefined) {
-                    if (d > threshold) return '#' + getGreenToRed(d * 100)
+                    if (d > threshold) return opts.connectionColor
                 }
                 return 'none'
             })
