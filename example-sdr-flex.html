@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=utf-8>
+    <title>2D SDR Drawing</title>
+    <style>
+        body { margin: 100px; }
+        svg {
+            border: solid 1px orange;
+        }
+    </style>
+</head>
+<body>
+
+<input type="range" min="10" max="1000" value="400" id="sizeSlider" />
+cells in SDR: <span class="sizeDisplay"></span>
+<br/>
+<input type="range" min="100" max="560" value="200" id="widthSlider" />
+width: <span class="widthDisplay"></span>px
+<br/>
+<input type="range" min="100" max="560" value="200" id="heightSlider" />
+height: <span class="heightDisplay"></span>px
+<br/>
+<br/>
+<br/>
+<svg id="sdrFlex"></svg>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="dist/cell-viz-2d-1.4.4.min.js"></script>
+<script>
+
+    $(function() {
+        let $sizeSlider = $('#sizeSlider')
+        let $sizeDisplay = $('.sizeDisplay')
+        let $widthSlider = $('#widthSlider')
+        let $widthDisplay = $('.widthDisplay')
+        let $heightSlider = $('#heightSlider')
+        let $heightDisplay = $('.heightDisplay')
+
+        function renderDisplay() {
+            let w = parseInt($widthSlider.val())
+            let h = parseInt($heightSlider.val())
+            let size = parseInt($sizeSlider.val())
+            let sdr = SdrUtils.getRandom(size, Math.round(size * .5))
+            $widthDisplay.html(w)
+            $heightDisplay.html(h)
+            $sizeDisplay.html(size)
+
+            new SdrDrawing(sdr, 'sdrFlex').draw({
+                width: w,
+                height: h,
+            })
+        }
+
+        renderDisplay()
+
+        $('input').on('input', () => {
+            renderDisplay()
+        })
+
+    });
+
+</script>
+
+</body>
+</html>

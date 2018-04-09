@@ -4,7 +4,10 @@
     <meta charset=utf-8>
     <title>2D SDR Drawing</title>
     <style>
-        body { margin: 100px; }
+        body { margin: 10px; }
+        svg {
+            border: solid 1px orange;
+        }
     </style>
 </head>
 <body>
@@ -17,7 +20,7 @@ receptive field: <span class="receptiveFieldPercDisplay"></span>%
 
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
-<script src="dist/cell-viz-2d-1.4.2.min.js"></script>
+<script src="dist/cell-viz-2d-1.4.4.min.js"></script>
 <script>
 
     $(function() {
@@ -32,10 +35,8 @@ receptive field: <span class="receptiveFieldPercDisplay"></span>%
         let $receptiveFieldPercSlider = $('#receptiveFieldPercSlider')
         let $receptiveFieldPercDisplay = $('.receptiveFieldPercDisplay')
         let drawOptions = {
-            width: 1000,
-            height: 500,
-            cellSize: 14,
-            rowLength: 30,
+            width: 560,
+            height: 300,
         }
         let pool = getRandomReceptiveField(.5, inputSpace)
 

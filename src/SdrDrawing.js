@@ -15,8 +15,6 @@ function rgbToHex(r, g, b) {
 let defaultOpts = {
     width: 400,
     height: 400,
-    cellSize: 10,
-    rowLength: 100,
     threshold: undefined,
     gradientFill: false,
     onColor: 'skyblue',
@@ -29,8 +27,20 @@ function SdrDrawing(permanences, element) {
     this.el = element
 }
 
+SdrDrawing.prototype._snapDrawOptionsToBox = function(opts) {
+    let w = opts.width
+    let h = opts.height
+    let area = w * h
+    let numBoxes = this.permanences.length
+    let cellSize = Math.floor(Math.sqrt(area / numBoxes))
+    let repeatX = Math.floor(w / cellSize)
+    opts.cellSize = cellSize
+    opts.rowLength = repeatX
+    return opts
+}
+
 SdrDrawing.prototype.draw = function(options) {
-    let opts = Object.assign(defaultOpts, options)
+    let opts = this._snapDrawOptionsToBox(Object.assign(defaultOpts, options))
     let threshold = opts.threshold
     let perms = this.permanences
     let svg = d3.select('#' + this.el)
