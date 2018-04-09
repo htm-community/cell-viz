@@ -21,4 +21,4 @@
 */
 
 window.SdrUtils = require('./SdrUtils');
-window.ReceptiveField = require('./ReceptiveField');
+window.SdrDrawing = require('./SdrDrawing');

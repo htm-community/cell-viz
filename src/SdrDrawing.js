@@ -24,12 +24,12 @@ let defaultOpts = {
     connectionColor: 'royalblue'
 }
 
-function ReceptiveField(permanences, element) {
+function SdrDrawing(permanences, element) {
     this.permanences = permanences
     this.el = element
 }
 
-ReceptiveField.prototype.draw = function(options) {
+SdrDrawing.prototype.draw = function(options) {
     let opts = Object.assign(defaultOpts, options)
     let threshold = opts.threshold
     let perms = this.permanences
@@ -100,4 +100,4 @@ ReceptiveField.prototype.draw = function(options) {
 
 }
 
-module.exports = ReceptiveField
+module.exports = SdrDrawing

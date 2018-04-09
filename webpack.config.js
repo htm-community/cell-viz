@@ -42,7 +42,7 @@ let config2d = {
    mode: 'development',
    entry: [
        "./src/SdrUtils.js",
-       "./src/ReceptiveField.js",
+       "./src/SdrDrawing.js",
        "./src/HtmViz2d.js"
    ],
    module: {

@@ -17,7 +17,7 @@ receptive field: <span class="receptiveFieldPercDisplay"></span>%
 
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
-<script src="dist/cell-viz-2d-1.4.0.min.js"></script>
+<script src="dist/cell-viz-2d-1.4.2.min.js"></script>
 <script>
 
     $(function() {
@@ -41,7 +41,7 @@ receptive field: <span class="receptiveFieldPercDisplay"></span>%
 
         function renderDisplay() {
             $receptiveFieldPercDisplay.html($receptiveFieldPercSlider.val())
-            let rcDrawing = new ReceptiveField(pool, 'receptiveFieldDemo')
+            let rcDrawing = new SdrDrawing(pool, 'receptiveFieldDemo')
             rcDrawing.draw(drawOptions)
         }
 

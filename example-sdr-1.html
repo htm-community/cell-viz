@@ -20,7 +20,7 @@ connection threshold: <span class="connectionThresholdDisplay"></span>
 
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
-<script src="dist/cell-viz-2d-1.4.0.min.js"></script>
+<script src="dist/cell-viz-2d-1.4.2.min.js"></script>
 <script>
 
     $(function() {
@@ -59,7 +59,7 @@ connection threshold: <span class="connectionThresholdDisplay"></span>
             let threshold = parseInt($connectionThresholdSlider.val()) / 100
             $connectionThresholdDisplays.html(threshold)
             $receptiveFieldPercDisplay.html($receptiveFieldPercSlider.val())
-            let rcDrawing = new ReceptiveField(perms, 'receptiveFieldDemo')
+            let rcDrawing = new SdrDrawing(perms, 'receptiveFieldDemo')
             drawOptions.threshold = parseInt($connectionThresholdSlider.val()) / 100
             rcDrawing.draw(drawOptions)
         }
