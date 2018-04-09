@@ -15,9 +15,9 @@ function rgbToHex(r, g, b) {
 function datumIsOn(d) {
     return d !== null && d > 0
 }
-function datumIsConnected(d, threshold) {
-    return d !== null && threshold !== null && d > threshold
-}
+// function datumIsConnected(d, threshold) {
+//     return d !== null && threshold !== null && d > threshold
+// }
 
 let defaultOpts = {
     width: 400,
@@ -97,9 +97,9 @@ SdrDrawing.prototype.drawLinesTo = function(coords) {
 }
 
 SdrDrawing.prototype.draw = function(options) {
-    let opts = this._snapDrawOptionsToBox(Object.assign(defaultOpts, options))
-    let threshold = opts.threshold
     let perms = this.permanences
+    let opts = this._snapDrawOptionsToBox(Object.assign({}, defaultOpts, options))
+    let threshold = opts.threshold
     this.$drawing = d3.select('#' + this.el)
         .attr('width', opts.width)
         .attr('height', opts.height)
