@@ -3,10 +3,9 @@ let DEFAULT_SPARSITY = 0.02;
 /***** Private TOOLS *****/
 
 // a tool to loop x times
-const times = x => f => {
-    if (x > 0) {
-        f()
-        times (x - 1) (f)
+function times(count, fn) {
+    for (let i = 0; i < count; i++) {
+        fn(i)
     }
 }
 
