@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=utf-8>
+    <title>2D SDR Drawing</title>
+    <style>
+        body { margin: 10px; }
+        svg {
+            border: solid 1px orange;
+        }
+    </style>
+</head>
+<body>
+
+<svg id="sdrHover"></svg>
+<br/>
+Hovering over: <span class="hoverDisplay"></span>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="dist/cell-viz-2d-1.4.6.min.js"></script>
+<script>
+
+    $(function() {
+        let $hoverDisplay = $('.hoverDisplay')
+
+        function renderDisplay() {
+            let sdr = []
+            for (let i = 0; i < 400; i++) {
+                let r = Math.random()
+                if (r < .3) sdr.push(null)
+                if (r < .6) sdr.push(0)
+                else sdr.push(Math.random())
+            }
+
+            new SdrDrawing(sdr, 'sdrHover').draw({
+                width: 560,
+                height: 560,
+                gradientFill: true,
+                threshold: 0.5,
+            }).onCell('mouseover', function(data, i) {
+                $hoverDisplay.html(`cell ${i} at ${data}`)
+            }).onConnection('mouseover', function(data) {
+                $hoverDisplay.html(`connection ${data.permanence} at ${data.index}`)
+            })
+        }
+
+        renderDisplay()
+
+        $('input').on('input', () => {
+            renderDisplay()
+        })
+
+    });
+
+</script>
+
+</body>
+</html>

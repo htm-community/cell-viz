@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=utf-8>
+    <title>2D SDR Drawing</title>
+    <style>
+        body { margin: 10px; }
+        svg {
+            border: solid 1px orange;
+            width: 560px;
+            height: 560px;
+        }
+        svg g {
+            border: solid 1px red;
+        }
+    </style>
+</head>
+<body>
+
+<svg>
+    <g id="sdrHover"></g>
+</svg>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="dist/cell-viz-2d-1.4.6.min.js"></script>
+<script>
+
+    $(function() {
+
+        function renderDisplay() {
+            let sdr = []
+            let drawing
+
+            for (let i = 0; i < 400; i++) {
+                let r = Math.random()
+                if (r > 0.5) sdr.push(1)
+                else sdr.push(0)
+            }
+
+            drawing = new SdrDrawing(sdr, 'sdrHover').draw({
+                width: 560,
+                height: 560,
+            }).onCell('mouseover', (d, i) => {
+                let coords = d3.mouse(drawing.$drawing.node())
+                drawing.drawLinesTo(coords)
+            })
+        }
+
+        renderDisplay()
+
+    });
+
+</script>
+
+</body>
+</html>
