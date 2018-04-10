@@ -1,6 +1,6 @@
 {
   "name": "cell-viz",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "description": "HTM Neuron population visualizer",
   "scripts": {
     "build": "./node_modules/.bin/webpack",

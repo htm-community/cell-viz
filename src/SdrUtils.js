@@ -98,9 +98,12 @@ function getInactiveBits(sdr) {
     return inactive;
 }
 
+// This works on arrays of 0/1 and floats (assuming any value > = converts to 1).
 function population(sdr) {
     return sdr.reduce(function(sum, n) {
-        return sum + n
+        let val = 0
+        if (n > 0) val = 1
+        return sum + val
     }, 0)
 }
 
