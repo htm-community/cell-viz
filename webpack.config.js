@@ -52,7 +52,7 @@ let config2d = {
        ]
    },
    output: {
-       path: __dirname + "/dist",
+       path: __dirname + "/docs",
        filename: `cell-viz-2d-${version}.min.js`
 
    }
