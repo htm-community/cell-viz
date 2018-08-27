@@ -19,4 +19,3 @@ Generate static assets:
 
 Open `example1.html` or `example2.html`.
 
-Or run `npm start` and open http://localhost:8080/webpack-dev-server/.
