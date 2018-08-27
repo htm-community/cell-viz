@@ -1,6 +1,8 @@
 # Cell-Viz
 
-These is a collection of cell visualizations, originally created to visualize HTM systems. There is a 2D and 3D library. This is a work in progress. 
+> _This is a work in progress._
+
+This package consists of a collection of HTM cell visualizations. It was originally created to visualize HTM systems, but now it is not meant to be used as a stand-alone package. It is e.g. used as a dependency of the package [htm-school-viz](https://github.com/htm-community/htm-school-viz). There is a 2D and 3D library. 
 
 ## Prerequisites
 
@@ -17,8 +19,3 @@ Install this npm package locally by issuing the following command
 Generate static assets:
 
     npm run build
-
-## Examples
-
-Open `example1.html` or `example2.html`.
-
